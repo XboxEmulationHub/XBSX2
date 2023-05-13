@@ -507,3 +507,5 @@ void DInputSource::CheckForStateChanges(size_t index, const DIJOYSTATE2& new_sta
 		}
 	}
 }
+
+#endif

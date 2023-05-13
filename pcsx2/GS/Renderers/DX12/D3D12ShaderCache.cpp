@@ -577,6 +577,10 @@ D3D12ShaderCache::ComPtr<ID3D12PipelineState> D3D12ShaderCache::CompileAndAddPip
 
 bool D3D12ShaderCache::AddPipelineToBlob(const CacheIndexKey& key, ID3D12PipelineState* pso)
 {
+#ifdef WINRT_XBOX
+	return false; // xbox drivers do not support CacheBlobs
+#endif
+
 	if (!m_pipeline_blob_file || std::fseek(m_pipeline_blob_file, 0, SEEK_END) != 0)
 		return false;
 

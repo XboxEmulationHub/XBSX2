@@ -2128,6 +2128,16 @@ void FullscreenUI::DrawExitWindow()
 				DoDesktopMode();
 			}
 		}
+
+		EndMenuButtons();
+
+		const char warning_txt[] = "XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.";
+		const ImVec2 rev_size(g_medium_font->CalcTextSizeA(g_medium_font->FontSize, FLT_MAX, 0.0f, warning_txt));
+		ImGui::PushFont(g_medium_font);
+		ImGui::SetCursorPos(
+			ImVec2(LayoutScale(10.0f), ImGui::GetWindowHeight() - rev_size.y - LayoutScale(20.0f)));
+		ImGui::Text(warning_txt);
+		ImGui::PopFont();
 	}
 	EndHorizontalMenu();
 
@@ -8624,7 +8634,7 @@ void FullscreenUI::DrawAboutWindow()
 {
 	ImGui::SetNextWindowSize(LayoutScale(1000.0f, 600.0f));
 	ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize * 0.5f, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-	ImGui::OpenPopup(FSUI_CSTR("About PCSX2"));
+	ImGui::OpenPopup(FSUI_CSTR("About XBSX2"));
 
 	ImGui::PushFont(g_large_font.first, g_large_font.second);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
@@ -8641,7 +8651,7 @@ void FullscreenUI::DrawAboutWindow()
 		const float indent = image_size.y + LayoutScale(12.0f);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + indent);
 		ImGui::TextWrapped("%s", FSUI_CSTR(
-									 "PCSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a "
+									 "XBSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a "
 									 "combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. "
 									 "This allows you to play PS2 games on your PC, with many additional features and benefits."));
 		ImGui::NewLine();

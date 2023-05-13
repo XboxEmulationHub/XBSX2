@@ -147,7 +147,10 @@ bool XInputSource::Initialize(SettingsInterface& si, std::unique_lock<std::mutex
 	}
 
 	// Try the hidden version of XInputGetState(), which lets us query the guide button.
+#if !WINRT_XBOX
 	m_xinput_get_state = reinterpret_cast<decltype(m_xinput_get_state)>(GetProcAddress(m_xinput_module, reinterpret_cast<LPCSTR>(100)));
+#endif
+
 	if (!m_xinput_get_state)
 		m_xinput_get_state = reinterpret_cast<decltype(m_xinput_get_state)>(GetProcAddress(m_xinput_module, "XInputGetState"));
 	m_xinput_set_state = reinterpret_cast<decltype(m_xinput_set_state)>(GetProcAddress(m_xinput_module, "XInputSetState"));

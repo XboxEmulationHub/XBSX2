@@ -40,6 +40,8 @@
 #include "GS/Renderers/DX12/GSDevice12.h"
 #include "GS/Renderers/DX11/D3D.h"
 
+#ifdef WINRT_XBOX
+#pragma comment(lib, "mincore")
 #endif
 
 #include "common/Console.h"
@@ -79,11 +81,13 @@ static RenderAPI GetAPIForRenderer(GSRendererType renderer)
 {
 	switch (renderer)
 	{
+#ifndef WINRT_XBOX
 		case GSRendererType::OGL:
 			return RenderAPI::OpenGL;
 
 		case GSRendererType::VK:
 			return RenderAPI::Vulkan;
+#endif
 
 #ifdef _WIN32
 		case GSRendererType::DX11:

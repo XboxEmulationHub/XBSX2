@@ -1,3 +1,4 @@
+#if SDL_BUILD
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
@@ -1739,3 +1740,4 @@ bool SDLInputSource::IsControllerSixaxis(const ControllerData& cd)
 		   SDL_GetNumJoystickAxes(cd.joystick) == 16 &&
 		   SDL_GetNumJoystickButtons(cd.joystick) == 11;
 }
+#endif

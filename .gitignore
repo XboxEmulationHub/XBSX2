@@ -122,3 +122,18 @@ CMakeSettings.json
 /ci-artifacts/
 /out/
 /.cache/
+
+# UWP/Xbox specific ignores
+/pcsx2-winrt/readme.txt
+/pcsx2-winrt/pcsx2-winrt_TemporaryKey.pfx
+/pcsx2-winrt/pcsx2-winrt.vcxproj.filters
+/pcsx2-winrt/resources
+/pcsx2-winrt/Generated Files/winrt
+/pcsx2-winrt/BundleArtifacts
+/pcsx2/pcsx2core.vcxproj.filters
+/AppPackages/
+/bin
+/findstr_CLI.bat
+/findstr_CLI(1).bat
+/packages
+/Search Results.txt

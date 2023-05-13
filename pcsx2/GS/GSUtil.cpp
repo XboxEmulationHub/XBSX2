@@ -282,6 +282,9 @@ GSRendererType GSUtil::GetPreferredRenderer()
 #if defined(__APPLE__)
 		// Mac: Prefer Metal hardware.
 		preferred_renderer = GSRendererType::Metal;
+#elif defined(WINRT_XBOX)
+		// WinRT/Xbox: Prefer DX12.
+		preferred_renderer = GSRendererType::DX12;
 #elif defined(_WIN32) && defined(_M_ARM64)
 		// Default to DX12 on Windows-on-ARM.
 		preferred_renderer = GSRendererType::DX12;

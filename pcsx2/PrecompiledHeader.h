@@ -8,6 +8,13 @@
 #	pragma warning(disable:4250) //'class' inherits 'method' via dominance
 #endif
 
+// Seems to be a bug in VS where this isn't properly applied
+#if defined(WINRT_XBOX)
+#define NOMINMAX
+#define UNICODE
+#define _UNICODE
+#endif
+
 #include "common/Pcsx2Defs.h"
 #include "common/VectorIntrin.h"
 

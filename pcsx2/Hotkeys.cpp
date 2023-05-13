@@ -171,7 +171,7 @@ DEFINE_HOTKEY("OpenLeaderboardsList", TRANSLATE_NOOP("Hotkeys", "Navigation"),
 DEFINE_HOTKEY(
 	"TogglePause", TRANSLATE_NOOP("Hotkeys", "Speed"), TRANSLATE_NOOP("Hotkeys", "Toggle Pause"), [](s32 pressed) {
 		if (!pressed && VMManager::HasValidVM() && CanPause())
-			VMManager::SetPaused(VMManager::GetState() != VMState::Paused);
+			Host::RunOnCPUThread([]() { VMManager::SetPaused(VMManager::GetState() != VMState::Paused); });
 	})
 DEFINE_HOTKEY(
 	"FrameAdvance", TRANSLATE_NOOP("Hotkeys", "Speed"), TRANSLATE_NOOP("Hotkeys", "Frame Advance"), [](s32 pressed) {
@@ -267,52 +267,59 @@ DEFINE_HOTKEY("PreviousSaveStateSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 		if (!pressed && VMManager::HasValidVM())
 			SaveStateSelectorUI::SelectPreviousSlot(UseSavestateSelector());
 	})
+
 DEFINE_HOTKEY("NextSaveStateSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Select Next Save Slot"), [](s32 pressed) {
 		if (!pressed && VMManager::HasValidVM())
 			SaveStateSelectorUI::SelectNextSlot(UseSavestateSelector());
 	})
+
 DEFINE_HOTKEY("SaveStateToSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Save State To Selected Slot"), [](s32 pressed) {
 		if (!pressed && VMManager::HasValidVM())
-			SaveStateSelectorUI::SaveCurrentSlot();
+			Host::RunOnCPUThread([]() { SaveStateSelectorUI::SaveCurrentSlot(); });
 	})
+
 DEFINE_HOTKEY("LoadStateFromSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Load State From Selected Slot"), [](s32 pressed) {
 		if (!pressed && VMManager::HasValidVM())
-			SaveStateSelectorUI::LoadCurrentSlot();
+			Host::RunOnCPUThread([]() { SaveStateSelectorUI::LoadCurrentSlot(); });
 	})
 DEFINE_HOTKEY("LoadBackupStateFromSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Load Backup State From Selected Slot"), [](s32 pressed) {
 		if (!pressed && VMManager::HasValidVM())
 			SaveStateSelectorUI::LoadCurrentBackupSlot();
 	})
+
 DEFINE_HOTKEY("SaveStateAndSelectNextSlot", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Save State and Select Next Slot"), [](s32 pressed) {
-		if (!pressed && VMManager::HasValidVM())
-		{
-			SaveStateSelectorUI::SaveCurrentSlot();
-			SaveStateSelectorUI::SelectNextSlot(false);
+		if (!pressed && VMManager::HasValidVM()) {
+			Host::RunOnCPUThread([]() {
+				SaveStateSelectorUI::SaveCurrentSlot();
+				SaveStateSelectorUI::SelectNextSlot(false);
+			});
 		}
 	})
+
 DEFINE_HOTKEY("SelectNextSlotAndSaveState", TRANSLATE_NOOP("Hotkeys", "Save States"),
 	TRANSLATE_NOOP("Hotkeys", "Select Next Slot and Save State"), [](s32 pressed) {
-		if (!pressed && VMManager::HasValidVM())
-		{
-			SaveStateSelectorUI::SelectNextSlot(false);
-			SaveStateSelectorUI::SaveCurrentSlot();
+		if (!pressed && VMManager::HasValidVM()) {
+			Host::RunOnCPUThread([]() {
+				SaveStateSelectorUI::SelectNextSlot(false);
+				SaveStateSelectorUI::SaveCurrentSlot();
+			});
 		}
 	})
 
 #define DEFINE_HOTKEY_SAVESTATE_X(slotnum, title) \
 	DEFINE_HOTKEY("SaveStateToSlot" #slotnum, "Save States", title, [](s32 pressed) { \
 		if (!pressed) \
-			HotkeySaveStateSlot(slotnum); \
+			Host::RunOnCPUThread([]() { HotkeySaveStateSlot(slotnum); }); \
 	})
 #define DEFINE_HOTKEY_LOADSTATE_X(slotnum, title) \
 	DEFINE_HOTKEY("LoadStateFromSlot" #slotnum, "Save States", title, [](s32 pressed) { \
 		if (!pressed) \
-			HotkeyLoadStateSlot(slotnum); \
+			Host::RunOnCPUThread([]() { HotkeyLoadStateSlot(slotnum); }); \
 	})
 DEFINE_HOTKEY_SAVESTATE_X(1, TRANSLATE_NOOP("Hotkeys", "Save State To Slot 1"))
 DEFINE_HOTKEY_LOADSTATE_X(1, TRANSLATE_NOOP("Hotkeys", "Load State From Slot 1"))

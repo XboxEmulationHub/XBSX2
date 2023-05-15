@@ -3,6 +3,7 @@
 #include <windows.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Composition.h>
@@ -10,6 +11,7 @@
 #include <winrt/Windows.UI.ViewManagement.Core.h>
 #include <winrt/Windows.Graphics.Display.Core.h>
 #include <winrt/Windows.Gaming.Input.h>
+#include <winrt/Windows.System.h>
 
 #include <gamingdeviceinformation.h>
 
@@ -19,6 +21,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <sstream>
 
 #include "fmt/core.h"
 
@@ -410,14 +413,18 @@ void WinRTHost::ProcessEventQueue() {
 struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 {
 	std::thread m_cpu_thread;
+	winrt::hstring m_launchOnExit;
+	std::string m_bootPath;
 
     IFrameworkView CreateView()
     {
         return *this;
     }
 
-    void Initialize(CoreApplicationView const &)
+    void Initialize(CoreApplicationView const & v)
     {
+		v.Activated({this, &App::OnActivate});
+
 		namespace WGI = winrt::Windows::Gaming::Input;
 
 		if (!WinRTHost::InitializeConfig())
@@ -443,6 +450,74 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 		}
 	}
 
+	  void OnActivate(const winrt::Windows::ApplicationModel::Core::CoreApplicationView&,
+		const winrt::Windows::ApplicationModel::Activation::IActivatedEventArgs& args)
+	{
+		std::stringstream filePath;
+
+		if (args.Kind() == Windows::ApplicationModel::Activation::ActivationKind::Protocol)
+		{
+			auto protocolActivatedEventArgs{
+				args.as<Windows::ApplicationModel::Activation::ProtocolActivatedEventArgs>()};
+			auto query = protocolActivatedEventArgs.Uri().QueryParsed();
+
+			for (uint32_t i = 0; i < query.Size(); i++)
+			{
+				auto arg = query.GetAt(i);
+
+				// parse command line string
+				if (arg.Name() == winrt::hstring(L"cmd"))
+				{
+					std::string argVal = winrt::to_string(arg.Value());
+
+					// Strip the executable from the cmd argument
+					if (argVal.rfind("xbsx2.exe", 0) == 0)
+					{
+						argVal = argVal.substr(10, argVal.length());
+					}
+
+					std::istringstream iss(argVal);
+					std::string s;
+
+					// Maintain slashes while reading the quotes
+					while (iss >> std::quoted(s, '"', (char)0))
+					{
+						filePath << s;
+					}
+				}
+				else if (arg.Name() == winrt::hstring(L"launchOnExit"))
+				{
+					// For if we want to return to a frontend
+					m_launchOnExit = arg.Value();
+				}
+			}
+		}
+
+		std::string gamePath = filePath.str();
+		if (!gamePath.empty() && gamePath != "")
+		{
+			std::unique_lock<std::mutex> lk(m_event_mutex);
+			m_event_queue.push_back([gamePath]() {
+				VMBootParameters params{};
+				params.filename = gamePath;
+				params.source_type = CDVD_SourceType::Iso;
+
+				if (VMManager::HasValidVM()) {
+					return;
+				}
+
+				if (!VMManager::Initialize(std::move(params))) {
+					return;
+				}
+
+				VMManager::SetState(VMState::Running);
+
+				GetMTGS().WaitForOpen();
+				InputManager::ReloadDevices();
+			});
+		}
+	}
+
 	void Load(hstring const&)
 	{
 	}
@@ -463,12 +538,14 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 				const winrt::Windows::UI::Core::BackRequestedEventArgs& args) { args.Handled(true); });
 
 		CommonHost::CPUThreadInitialize();
-		GameList::Refresh(false, true);
-		ImGuiManager::InitializeFullscreenUI();
 
-		if (!GetMTGS().WaitForOpen())
+		WinRTHost::ProcessEventQueue();
+		if (VMManager::GetState() != VMState::Running)
 		{
-			return;
+			GameList::Refresh(false, true);
+			ImGuiManager::InitializeFullscreenUI();
+
+			GetMTGS().WaitForOpen();
 		}
 
 		window.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
@@ -517,8 +594,22 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 			Sleep(1);
 		}
 
-		CommonHost::CPUThreadShutdown();
-		CoreApplication::Exit();
+		if (!m_launchOnExit.empty())
+		{
+			winrt::Windows::Foundation::Uri m_uri{m_launchOnExit};
+			auto asyncOperation = winrt::Windows::System::Launcher::LaunchUriAsync(m_uri);
+			asyncOperation.Completed([](winrt::Windows::Foundation::IAsyncOperation<bool> const& sender,
+										 winrt::Windows::Foundation::AsyncStatus const asyncStatus) {
+				CommonHost::CPUThreadShutdown();
+				CoreApplication::Exit();
+				return;
+			});
+		}
+		else
+		{
+			CommonHost::CPUThreadShutdown();
+			CoreApplication::Exit();
+		}
 	}
 
 	void SetWindow(CoreWindow const& window)

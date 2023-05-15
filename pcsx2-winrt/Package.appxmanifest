@@ -23,6 +23,11 @@
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
         <uap:DefaultTile/>
       </uap:VisualElements>
+      <Extensions>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="xbsx2"/>
+        </uap:Extension>
+      </Extensions>
     </Application>
   </Applications>
   <Capabilities>

@@ -136,7 +136,6 @@ CMakeSettings.json
 /pcsx2-winrt/BundleArtifacts
 /pcsx2/pcsx2core.vcxproj.filters
 /AppPackages
+/packages
 /findstr_CLI.bat
 /findstr_CLI(1).bat
-/packages
-/Search Results.txt

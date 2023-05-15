@@ -225,10 +225,12 @@ std::optional<WindowInfo> Host::GetTopLevelWindowInfo()
 
 void Host::OnInputDeviceConnected(const std::string_view& identifier, const std::string_view& device_name)
 {
+	Host::AddKeyedOSDMessage(fmt::format("{} connected.", identifier), fmt::format("{} connected.", identifier), 5.0f);
 }
 
 void Host::OnInputDeviceDisconnected(const std::string_view& identifier)
 {
+	Host::AddKeyedOSDMessage(fmt::format("{} connected.", identifier), fmt::format("{} disconnected.", identifier), 5.0f);
 }
 
 void Host::SetRelativeMouseMode(bool enabled)

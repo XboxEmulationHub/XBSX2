@@ -2,10 +2,10 @@ name: WinRT SSE4, AVX2 Dev Branch Builds
 on:
   push:
     branches:
-      - uwp-dev
+      - dev
   pull_request:
     branches:
-      - uwp-dev
+      - dev
 
 jobs:
   build:

@@ -243,8 +243,6 @@
     <None Include="resources\sounds\achievements\unlock.wav">
       <Filter>resources\sounds\achievements</Filter>
     </None>
-    <None Include="xbsx2_TemporaryKey.pfx" />
-    <None Include="xbsx2-winrt_TemporaryKey.pfx" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

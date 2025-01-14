@@ -186,7 +186,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="xbsx2-winrt_TemporaryKey.pfx" />
     <None Include="PropertySheet.props" />
     <None Include="resources\fonts\Roboto-Regular-copyright" />
     <None Include="resources\GameIndex.yaml">
@@ -195,7 +194,6 @@
     <None Include="resources\patches.zip">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="xbsx2_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png" />

@@ -128,9 +128,11 @@ CMakeSettings.json
 /pcsx2-winrt/Generated Files/winrt
 /pcsx2-winrt/BundleArtifacts
 /pcsx2-winrt/readme.txt
-/pcsx2-winrt/pcsx2-winrt_TemporaryKey.pfx
+/pcsx2-winrt/xbsx2-winrt_TemporaryKey.pfx
+/pcsx2-winrt/xbsx2_TemporaryKey.pfx
+
 /Search Results.txt
 /findstr_CLI.bat
 /findstr_CLI(1).bat
 /.cache/
-/AppPackages/xbsx2
+/AppPackages/

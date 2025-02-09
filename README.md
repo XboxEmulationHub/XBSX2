@@ -17,7 +17,7 @@ You can find the compilation instructions here: [BUILDING.md](https://github.com
 
 ## Credits
 
-* [PCSX2](https://github.com/PCSX2/) For making the best PS2 emulator.
-* [SirMangler](https://github.com/SirMangler/) for porting PCSX2 to UWP.
-* [worleydl](https://github.com/worleydl) for the achievement code.
-* [Rockso](https://github.com/Rockso85) for the Assets.
+* [PCSX2](https://github.com/PCSX2/pcsx2) – For revolutionizing PS2 emulation with exceptional performance.
+* [SirMangler](https://github.com/SirMangler) – For rewriting PCSX2 for UWP.
+* [worleydl](https://github.com/worleydl) – For developing the achievement code.
+* [Rockso85](https://github.com/Rockso85) – For making the new assets.

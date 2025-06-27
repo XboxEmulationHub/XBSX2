@@ -811,7 +811,7 @@ struct Pcsx2Config
 		float StretchY = 100.0f;
 		int Crop[4] = {};
 
-		float OsdScale = 100.0f;
+		float OsdScale = 200.0f;
 		OsdOverlayPos OsdMessagesPos = OsdOverlayPos::TopLeft;
 		OsdOverlayPos OsdPerformancePos = OsdOverlayPos::TopRight;
 

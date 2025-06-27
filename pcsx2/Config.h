@@ -727,7 +727,11 @@ struct Pcsx2Config
 		static constexpr BiFiltering DEFAULT_TEXTURE_FILTERING_MODE = BiFiltering::PS2;
 		static constexpr TriFiltering DEFAULT_TRILINEAR_FILTERING_MODE = TriFiltering::Automatic;
 
+#if !defined(WINRT_XBOX)
 		static constexpr float DEFAULT_OSD_SCALE = 100.0f;
+#else
+		static constexpr float DEFAULT_OSD_SCALE = 200.0f;
+#endif
 		static constexpr float DEFAULT_OSD_MARGIN = 10.0f;
 		static constexpr OsdOverlayPos DEFAULT_OSD_MESSAGE_POS = OsdOverlayPos::TopLeft;
 		static constexpr OsdOverlayPos DEFAULT_OSD_PERFORMANCE_POS = OsdOverlayPos::TopRight;

@@ -634,7 +634,11 @@ PINEServer::IPCBuffer PINEServer::ParseCommand(std::span<u8> buf, std::vector<u8
 					goto error;
 				ToResultVector(ret_buffer, size, ret_cnt);
 				ret_cnt += 4;
+#if !defined(WINRT_XBOX)
 				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "PCSX2 %s", BuildVersion::GitRev);
+#else
+				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
+#endif
 				ret_cnt += size;
 				break;
 			}

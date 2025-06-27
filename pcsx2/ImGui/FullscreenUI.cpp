@@ -1359,6 +1359,7 @@ void FullscreenUI::DrawLandingWindow()
 {
 	ImVec2 menu_pos, menu_size;
 	DrawLandingTemplate(&menu_pos, &menu_size);
+	const char version_txt[] = APP_VERSION; 
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
@@ -3466,16 +3467,27 @@ void FullscreenUI::DrawAboutWindow()
 			FSUI_CSTR("PlayStation 2 and PS2 are registered trademarks of Sony Interactive Entertainment. This application is not "
 					  "affiliated in any way with Sony Interactive Entertainment."));
 
+		ImGui::NewLine();
+
+		ImGui::TextWrapped("Credits:");
+
+		ImGui::TextWrapped("Thank you to the PCSX2 team for their hard work on the PCSX2 project.");
+
+		ImGui::TextWrapped("Thank you to SirMangler, and TRW/TheRhysWyrill for porting PCSX2 to UWP.");
+
+		ImGui::TextWrapped("Thank you to Rockso/Redhood/fffathur for help with assets like the App Icon/Banner.");
+
+		ImGui::NewLine();
+
+		ImGui::Separator();
+
 		BeginMenuButtons();
 
-		if (ActiveButton(FSUI_ICONSTR(ICON_FA_GLOBE, "Website"), false))
-			ExitFullscreenAndOpenURL(PCSX2_WEBSITE_URL);
+		if (ActiveButton(ICON_FA_PERSON_BOOTH "Discord", false))
+			ExitFullscreenAndOpenURL(XBOXEMULATIONHUB_DISCORD_URL);
 
-		if (ActiveButton(FSUI_ICONSTR(ICON_FA_PERSON_BOOTH, "Support Forums"), false))
-			ExitFullscreenAndOpenURL(PCSX2_FORUMS_URL);
-
-		if (ActiveButton(FSUI_ICONSTR(ICON_FA_BUG, "GitHub Repository"), false))
-			ExitFullscreenAndOpenURL(PCSX2_GITHUB_URL);
+		if (ActiveButton(ICON_FA_BUG "XBSX2 GitHub Repository", false))
+			ExitFullscreenAndOpenURL(XBSX2_GITHUB_URL);
 
 		if (ActiveButton(FSUI_ICONSTR(ICON_FA_NEWSPAPER, "License"), false))
 			ExitFullscreenAndOpenURL(PCSX2_LICENSE_URL);
@@ -4182,9 +4194,6 @@ TRANSLATE_NOOP("FullscreenUI", "Sort Reversed");
 TRANSLATE_NOOP("FullscreenUI", "Show Titles");
 TRANSLATE_NOOP("FullscreenUI", "Scan For New Games");
 TRANSLATE_NOOP("FullscreenUI", "Rescan All Games");
-TRANSLATE_NOOP("FullscreenUI", "Website");
-TRANSLATE_NOOP("FullscreenUI", "Support Forums");
-TRANSLATE_NOOP("FullscreenUI", "GitHub Repository");
 TRANSLATE_NOOP("FullscreenUI", "License");
 TRANSLATE_NOOP("FullscreenUI", "Close");
 TRANSLATE_NOOP("FullscreenUI", "Use Title File Names");

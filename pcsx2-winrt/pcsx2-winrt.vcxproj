@@ -9,7 +9,7 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{5e7b753a-b43d-43aa-a373-bba85f9fac80}</ProjectGuid>
-    <ProjectName>XBSX2</ProjectName>
+    <ProjectName>pcsx2-winrt</ProjectName>
     <RootNamespace>pcsx2_winrt</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
@@ -94,15 +94,13 @@
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
-    <AppxBundle>Never</AppxBundle>
+    <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
-    <PackageCertificateKeyFile>xbsx2_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>pcsx2-winrt_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
-    <AppInstallerUri>https://xboxdev.store/visual-studio/SternXD/XBSX2/latest/</AppInstallerUri>
-    <PackageCertificateThumbprint>B01DFD7AD5402A9833DE2A982092B1361FEBF840</PackageCertificateThumbprint>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -145,8 +143,8 @@
     </ClCompile>
     <Link>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\pcsx2core\$(Platform)\$(Configuration);$(SolutionDir)\uwp-deps\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>setupapi.lib;comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;xinputuap.lib;libfreetype.dll.a;libjpeg.dll.a;libpng16.dll.a;libwebp.dll.a;liblz4.dll.a;libz.dll.a;libzstd.dll.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\pcsx2core\$(Platform)\$(Configuration);$(SolutionDir)\uwp-deps\lib;$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>setupapi.lib;comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;rpcrt4.lib;xinputuap.lib;libfreetype.dll.a;libjpeg.dll.a;libpng16.dll.a;libwebp.dll.a;liblz4.dll.a;libz.dll.a;libzstd.dll.a;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -218,6 +216,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="pcsx2-winrt_TemporaryKey.pfx" />
     <None Include="PropertySheet.props" />
     <None Include="resources\fonts\Roboto-Regular-copyright" />
     <None Include="resources\GameIndex.yaml">

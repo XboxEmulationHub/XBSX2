@@ -2667,7 +2667,7 @@ void FullscreenUI::DrawEmulationSettingsPage()
 		FSUI_CSTR("Speeds up emulation so that the guest refresh rate matches the host."), "EmuCore/GS", "SyncToHostRefreshRate", false);
 
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_PF_HEARTBEAT_CIRCLE, "Use Host VSync Timing"),
-		FSUI_CSTR("Disables PCSX2's internal frame timing, and uses host vsync instead."), "EmuCore/GS", "UseVSyncForTiming", false,
+		FSUI_CSTR("Disables XBSX2's internal frame timing, and uses host vsync instead."), "EmuCore/GS", "UseVSyncForTiming", false,
 		GetEffectiveBoolSetting(bsi, "EmuCore/GS", "VsyncEnable", false) && GetEffectiveBoolSetting(bsi, "EmuCore/GS", "SyncToHostRefreshRate", false));
 
 	EndMenuButtons();
@@ -3503,8 +3503,8 @@ void FullscreenUI::DrawOSDSettingsPage()
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_BOLD, "Bold OSD Text"),
 		FSUI_CSTR("Draws OSD text with heavier weight for improved readability."),
 		"EmuCore/GS", "OsdBoldText", true);
-	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CODE_MERGE, "Show PCSX2 Version"),
-		FSUI_CSTR("Shows the current PCSX2 version."), "EmuCore/GS",
+	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CODE_MERGE, "Show XBSX2 Version"),
+		FSUI_CSTR("Shows the current XBSX2 version."), "EmuCore/GS",
 		"OsdShowVersion", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_GAUGE_SIMPLE_HIGH, "Show Speed Percentages"),
 		FSUI_CSTR("Shows the current emulation speed of the system as a percentage."), "EmuCore/GS",
@@ -4452,7 +4452,7 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 
 		ImGui::PushTextWrapPos(content_width);
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead."));
+		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead."));
 		ImGui::PopStyleColor();
 		ImGui::PopTextWrapPos();
 
@@ -4793,7 +4793,7 @@ void FullscreenUI::DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& se
 
 	MenuHeading(FSUI_CSTR("Settings"));
 	check_challenge_state = DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_TROPHY, "Enable Achievements"),
-		FSUI_CSTR("When enabled and logged in, PCSX2 will scan for achievements on startup."), "Achievements", "Enabled", false);
+		FSUI_CSTR("When enabled and logged in, XBSX2 will scan for achievements on startup."), "Achievements", "Enabled", false);
 
 	const bool enabled = bsi->GetBoolValue("Achievements", "Enabled", false);
 
@@ -4802,13 +4802,14 @@ void FullscreenUI::DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& se
 			"\"Challenge\" mode for achievements, including leaderboard tracking. Disables save state, cheats, and slowdown functions."),
 		"Achievements", "ChallengeMode", false, enabled);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_EYE, "Enable Spectator Mode"),
-		FSUI_CSTR("When enabled, PCSX2 will assume all achievements are locked and not send any unlock notifications to the server."),
+		FSUI_CSTR("When enabled, XBSX2 will assume all achievements are locked and not send any unlock notifications to the server."),
 		"Achievements", "SpectatorMode", false, enabled);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_LOCK, "Enable Encore Mode"),
 		FSUI_CSTR("When enabled, each session will behave as if no achievements have been unlocked."), "Achievements", "EncoreMode", false,
 		enabled);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_MEDAL, "Test Unofficial Achievements"),
-		FSUI_CSTR("When enabled, PCSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements."),
+		FSUI_CSTR(
+			"When enabled, XBSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements."),
 		"Achievements", "UnofficialTestMode", false, enabled);
 
 	// Check for challenge mode just being enabled.
@@ -5543,7 +5544,7 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 	if (!IsEditingGameSettings(bsi))
 	{
 		DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_BIOHAZARD, "Show Advanced Settings"),
-			FSUI_CSTR("Changing these options may cause games to become non-functional. Modify at your own risk, the PCSX2 team will not "
+			FSUI_CSTR("Changing these options may cause games to become non-functional. Modify at your own risk, we will not "
 					  "provide support for configurations with these settings changed."),
 			"UI", "ShowAdvancedSettings", false);
 	}
@@ -5770,7 +5771,7 @@ void FullscreenUI::DrawPatchesOrCheatsSettingsPage(bool cheats)
 					 FSUI_CSTR("Activating game patches can cause unpredictable behavior, crashing, soft-locks, or broken saved games."),
 			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
 		ActiveButton(
-			FSUI_CSTR("Use patches at your own risk, the PCSX2 team will provide no support for users who have enabled game patches."),
+			FSUI_CSTR("Use patches at your own risk, we will provide no support for users who have enabled game patches."),
 			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
 	}
 
@@ -5968,7 +5969,7 @@ TRANSLATE_NOOP("FullscreenUI", "Sets the number of frames which can be queued.")
 TRANSLATE_NOOP("FullscreenUI", "Synchronize EE and GS threads after each frame. Lowest input latency, but increases system requirements.");
 TRANSLATE_NOOP("FullscreenUI", "Synchronizes frame presentation with host refresh.");
 TRANSLATE_NOOP("FullscreenUI", "Speeds up emulation so that the guest refresh rate matches the host.");
-TRANSLATE_NOOP("FullscreenUI", "Disables PCSX2's internal frame timing, and uses host vsync instead.");
+TRANSLATE_NOOP("FullscreenUI", "Disables XBSX2's internal frame timing, and uses host vsync instead.");
 TRANSLATE_NOOP("FullscreenUI", "Graphics API");
 TRANSLATE_NOOP("FullscreenUI", "Selects the API used to render the emulated GS.");
 TRANSLATE_NOOP("FullscreenUI", "Display");
@@ -6078,7 +6079,7 @@ TRANSLATE_NOOP("FullscreenUI", "Determines where performance statistics are posi
 TRANSLATE_NOOP("FullscreenUI", "Select OSD Font");
 TRANSLATE_NOOP("FullscreenUI", "Use default bundled font");
 TRANSLATE_NOOP("FullscreenUI", "Draws OSD text with heavier weight for improved readability.");
-TRANSLATE_NOOP("FullscreenUI", "Shows the current PCSX2 version.");
+TRANSLATE_NOOP("FullscreenUI", "Shows the current XBSX2 version.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the current emulation speed of the system as a percentage.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the number of internal video frames displayed per second by the system.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the number of Vsyncs performed per second by the system.");
@@ -6137,7 +6138,7 @@ TRANSLATE_NOOP("FullscreenUI", "Enables the internal Hard Disk Drive for expande
 TRANSLATE_NOOP("FullscreenUI", "Changes the HDD image used for PS2 internal storage.");
 TRANSLATE_NOOP("FullscreenUI", "HDD Image Selection");
 TRANSLATE_NOOP("FullscreenUI", "RetroAchievements");
-TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead.");
+TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead.");
 TRANSLATE_NOOP("FullscreenUI", "Username");
 TRANSLATE_NOOP("FullscreenUI", "Password");
 TRANSLATE_NOOP("FullscreenUI", "Logging in...");
@@ -6149,11 +6150,11 @@ TRANSLATE_NOOP("FullscreenUI", "Logs out of RetroAchievements.");
 TRANSLATE_NOOP("FullscreenUI", "Logs in to RetroAchievements.");
 TRANSLATE_NOOP("FullscreenUI", "Game Info");
 TRANSLATE_NOOP("FullscreenUI", "Settings");
-TRANSLATE_NOOP("FullscreenUI", "When enabled and logged in, PCSX2 will scan for achievements on startup.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled and logged in, XBSX2 will scan for achievements on startup.");
 TRANSLATE_NOOP("FullscreenUI", "\"Challenge\" mode for achievements, including leaderboard tracking. Disables save state, cheats, and slowdown functions.");
-TRANSLATE_NOOP("FullscreenUI", "When enabled, PCSX2 will assume all achievements are locked and not send any unlock notifications to the server.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled, XBSX2 will assume all achievements are locked and not send any unlock notifications to the server.");
 TRANSLATE_NOOP("FullscreenUI", "When enabled, each session will behave as if no achievements have been unlocked.");
-TRANSLATE_NOOP("FullscreenUI", "When enabled, PCSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled, XBSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements.");
 TRANSLATE_NOOP("FullscreenUI", "Notifications");
 TRANSLATE_NOOP("FullscreenUI", "Displays popup messages on events such as achievement unlocks and leaderboard submissions.");
 TRANSLATE_NOOP("FullscreenUI", "Displays popup messages when starting, submitting, or failing a leaderboard challenge.");
@@ -6190,7 +6191,7 @@ TRANSLATE_NOOP("FullscreenUI", "Data Save Locations");
 TRANSLATE_NOOP("FullscreenUI", "Organization");
 TRANSLATE_NOOP("FullscreenUI", "Saves snapshots to per-game subfolders instead of a shared folder.");
 TRANSLATE_NOOP("FullscreenUI", "Saves video recordings to per-game subfolders instead of a shared folder.");
-TRANSLATE_NOOP("FullscreenUI", "Changing these options may cause games to become non-functional. Modify at your own risk, the PCSX2 team will not provide support for configurations with these settings changed.");
+TRANSLATE_NOOP("FullscreenUI", "Changing these options may cause games to become non-functional. Modify at your own risk, we will not provide support for configurations with these settings changed.");
 TRANSLATE_NOOP("FullscreenUI", "Logging");
 TRANSLATE_NOOP("FullscreenUI", "Writes log messages to the system console (console window/standard output).");
 TRANSLATE_NOOP("FullscreenUI", "Writes log messages to emulog.txt.");
@@ -6236,7 +6237,7 @@ TRANSLATE_NOOP("FullscreenUI", "No patches are available for this game.");
 TRANSLATE_NOOP("FullscreenUI", "Game Patches");
 TRANSLATE_NOOP("FullscreenUI", "Activating cheats can cause unpredictable behavior, crashing, soft-locks, or broken saved games.");
 TRANSLATE_NOOP("FullscreenUI", "Activating game patches can cause unpredictable behavior, crashing, soft-locks, or broken saved games.");
-TRANSLATE_NOOP("FullscreenUI", "Use patches at your own risk, the PCSX2 team will provide no support for users who have enabled game patches.");
+TRANSLATE_NOOP("FullscreenUI", "Use patches at your own risk, we will provide no support for users who have enabled game patches.");
 TRANSLATE_NOOP("FullscreenUI", "Game Fixes");
 TRANSLATE_NOOP("FullscreenUI", "Game fixes should not be modified unless you are aware of what each option does and the implications of doing so.");
 TRANSLATE_NOOP("FullscreenUI", "For Tales of Destiny.");
@@ -6686,7 +6687,7 @@ TRANSLATE_NOOP("FullscreenUI", "OSD Performance Position");
 TRANSLATE_NOOP("FullscreenUI", "OSD Font File");
 TRANSLATE_NOOP("FullscreenUI", "Clear OSD Font Override");
 TRANSLATE_NOOP("FullscreenUI", "Bold OSD Text");
-TRANSLATE_NOOP("FullscreenUI", "Show PCSX2 Version");
+TRANSLATE_NOOP("FullscreenUI", "Show XBSX2 Version");
 TRANSLATE_NOOP("FullscreenUI", "Show Speed Percentages");
 TRANSLATE_NOOP("FullscreenUI", "Show FPS");
 TRANSLATE_NOOP("FullscreenUI", "Show VPS");

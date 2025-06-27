@@ -1386,12 +1386,14 @@ void FullscreenUI::DrawLandingWindow()
 		}
 
 		if (HorizontalMenuSvgItem("fullscreenui/exit.svg", FSUI_CSTR("Exit"),
-				FSUI_CSTR("Return to desktop mode, or exit the application.")) ||
+				FSUI_CSTR("Exit the application and return to Dev Home.")) ||
 			(!AreAnyDialogsOpen() && WantsToCloseMenu()))
 		{
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
+		ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
+		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.");
 	}
 	ImGui::PopStyleColor();
 
@@ -1413,7 +1415,9 @@ void FullscreenUI::DrawLandingWindow()
 			std::make_pair(glyphs.select, FSUI_VSTR("About")),
 			std::make_pair(glyphs.dpad_lr, FSUI_VSTR("Navigate")),
 			std::make_pair(swapNorthWest ? glyphs.west : glyphs.north, FSUI_VSTR("Game List")),
+#if !defined(WINRT_XBOX) // Xbox/UWP: We are always fullscreen
 			std::make_pair(swapNorthWest ? glyphs.north : glyphs.west, FSUI_VSTR("Toggle Fullscreen")),
+#endif
 			std::make_pair(glyphs.confirm(circleOK), FSUI_VSTR("Select")),
 			std::make_pair(glyphs.cancel(circleOK), FSUI_VSTR("Exit")),
 		});
@@ -1422,7 +1426,9 @@ void FullscreenUI::DrawLandingWindow()
 	{
 		SetFullscreenFooterText(std::array{
 			std::make_pair(ICON_PF_F1, FSUI_VSTR("About")),
+#if !defined(WINRT_XBOX) // Xbox/UWP: We are always fullscreen
 			std::make_pair(ICON_PF_F11, FSUI_VSTR("Toggle Fullscreen")),
+#endif
 			std::make_pair(ICON_PF_ARROW_LEFT ICON_PF_ARROW_RIGHT, FSUI_VSTR("Navigate")),
 			std::make_pair(ICON_PF_SPACE, FSUI_VSTR("Game List")),
 			std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
@@ -1447,13 +1453,13 @@ void FullscreenUI::DrawStartGameWindow()
 		{
 			DoStartFile();
 		}
-
+#ifndef WINRT_XBOX // XBox/UWP: No disc support
 		if (HorizontalMenuSvgItem("fullscreenui/drive-cdrom.svg", FSUI_CSTR("Start Disc"),
 				FSUI_CSTR("Start a game from a disc in your PC's DVD drive.")))
 		{
 			DoStartDisc();
 		}
-
+#endif // !WINRT_XBOX
 		if (HorizontalMenuSvgItem("fullscreenui/start-bios.svg", FSUI_CSTR("Start BIOS"),
 				FSUI_CSTR("Start the console without any disc inserted.")))
 		{
@@ -1533,16 +1539,6 @@ void FullscreenUI::DrawExitWindow()
 			}
 		}
 
-		EndMenuButtons();
-
-		const char warning_txt[] = "XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.";
-		const ImVec2 rev_size(g_medium_font->CalcTextSizeA(g_medium_font->FontSize, FLT_MAX, 0.0f, warning_txt));
-		ImGui::PushFont(g_medium_font);
-		ImGui::SetCursorPos(
-			ImVec2(LayoutScale(10.0f), ImGui::GetWindowHeight() - rev_size.y - LayoutScale(20.0f)));
-		ImGui::Text(warning_txt);
-		ImGui::PopFont();
-	}
 	EndHorizontalMenu();
 
 	ImGui::PopStyleColor();
@@ -3165,7 +3161,9 @@ void FullscreenUI::DrawGameListSettingsWindow()
 		if (MenuButton(it.first.c_str(), it.second ? FSUI_CSTR("Scanning Subdirectories") : FSUI_CSTR("Not Scanning Subdirectories")))
 		{
 			ImGuiFullscreen::ChoiceDialogOptions options = {
+#if !defined(WINRT_XBOX)
 				{FSUI_ICONSTR(ICON_FA_FOLDER_OPEN, "Open in File Browser"), false},
+#endif
 				{it.second ? (FSUI_ICONSTR(ICON_FA_FOLDER_MINUS, "Disable Subdirectory Scanning")) :
 							 (FSUI_ICONSTR(ICON_FA_FOLDER_PLUS, "Enable Subdirectory Scanning")),
 					false},
@@ -3178,12 +3176,16 @@ void FullscreenUI::DrawGameListSettingsWindow()
 					if (index < 0)
 						return;
 
-					if (index == 0)
+					s32 opt = 0;
+#if !defined(WINRT_XBOX)
+					if (index == opt++)
 					{
 						// Open In File Browser.
 						ExitFullscreenAndOpenURL(Path::CreateFileURL(dir));
 					}
-					else if (index == 1)
+					else
+#endif
+					if (index == opt++)
 					{
 						// Toggle Subdirectory Scanning.
 						{
@@ -3206,7 +3208,7 @@ void FullscreenUI::DrawGameListSettingsWindow()
 
 						Host::RefreshGameListAsync(false);
 					}
-					else if (index == 2)
+					else if (index == opt++)
 					{
 						// Remove From List.
 						auto lock = Host::GetSettingsLock();

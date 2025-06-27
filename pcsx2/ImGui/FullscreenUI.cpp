@@ -1984,12 +1984,14 @@ void FullscreenUI::DrawLandingWindow()
 		}
 
 		if (HorizontalMenuSvgItem("fullscreenui/exit.svg", FSUI_CSTR("Exit"),
-				FSUI_CSTR("Return to desktop mode, or exit the application.")) ||
+				FSUI_CSTR("This exits the application back to Dev Home.")) ||
 			(!AreAnyDialogsOpen() && WantsToCloseMenu()))
 		{
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
+		ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
+		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.");
 	}
 	ImGui::PopStyleColor();
 
@@ -2010,7 +2012,9 @@ void FullscreenUI::DrawLandingWindow()
 			std::make_pair(ICON_PF_SELECT_SHARE, FSUI_VSTR("About")),
 			std::make_pair(ICON_PF_DPAD_LEFT_RIGHT, FSUI_VSTR("Navigate")),
 			std::make_pair(swapNorthWest ? ICON_PF_BUTTON_SQUARE : ICON_PF_BUTTON_TRIANGLE, FSUI_VSTR("Game List")),
+#ifndef WINRT_XBOX // XBox/UWP: We are always fullscreen
 			std::make_pair(swapNorthWest ? ICON_PF_BUTTON_TRIANGLE : ICON_PF_BUTTON_SQUARE, FSUI_VSTR("Toggle Fullscreen")),
+#endif // !WINRT_XBOX
 			std::make_pair(circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS, FSUI_VSTR("Select")),
 			std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Exit")),
 		});
@@ -2019,7 +2023,9 @@ void FullscreenUI::DrawLandingWindow()
 	{
 		SetFullscreenFooterText(std::array{
 			std::make_pair(ICON_PF_F1, FSUI_VSTR("About")),
+#ifndef WINRT_XBOX // XBox/UWP: We are always fullscreen
 			std::make_pair(ICON_PF_F11, FSUI_VSTR("Toggle Fullscreen")),
+#endif // !WINRT_XBOX
 			std::make_pair(ICON_PF_ARROW_LEFT ICON_PF_ARROW_RIGHT, FSUI_VSTR("Navigate")),
 			std::make_pair(ICON_PF_SPACE, FSUI_VSTR("Game List")),
 			std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
@@ -2044,13 +2050,13 @@ void FullscreenUI::DrawStartGameWindow()
 		{
 			DoStartFile();
 		}
-
+#ifndef WINRT_XBOX // XBox/UWP: No disc support
 		if (HorizontalMenuSvgItem("fullscreenui/drive-cdrom.svg", FSUI_CSTR("Start Disc"),
 				FSUI_CSTR("Start a game from a disc in your PC's DVD drive.")))
 		{
 			DoStartDisc();
 		}
-
+#endif // !WINRT_XBOX
 		if (HorizontalMenuSvgItem("fullscreenui/start-bios.svg", FSUI_CSTR("Start BIOS"),
 				FSUI_CSTR("Start the console without any disc inserted.")))
 		{
@@ -2129,16 +2135,6 @@ void FullscreenUI::DrawExitWindow()
 			}
 		}
 
-		EndMenuButtons();
-
-		const char warning_txt[] = "XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.";
-		const ImVec2 rev_size(g_medium_font->CalcTextSizeA(g_medium_font->FontSize, FLT_MAX, 0.0f, warning_txt));
-		ImGui::PushFont(g_medium_font);
-		ImGui::SetCursorPos(
-			ImVec2(LayoutScale(10.0f), ImGui::GetWindowHeight() - rev_size.y - LayoutScale(20.0f)));
-		ImGui::Text(warning_txt);
-		ImGui::PopFont();
-	}
 	EndHorizontalMenu();
 
 	ImGui::PopStyleColor();
@@ -4153,14 +4149,18 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 		"UI", "FSUIBackgroundMode", "fit", s_background_mode_names, s_background_mode_values, std::size(s_background_mode_names), true);
 
 	MenuHeading(FSUI_CSTR("Behaviour"));
+#ifndef WINRT_XBOX
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_PF_SNOOZE, "Inhibit Screensaver"),
 		FSUI_CSTR("Prevents the screen saver from activating and the host from sleeping while emulation is running."), "EmuCore",
 		"InhibitScreensaver", true);
+#endif
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_PAUSE, "Pause On Start"), FSUI_CSTR("Pauses the emulator when a game is started."), "UI",
 		"StartPaused", false);
+#ifndef WINRT_XBOX
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_EYE, "Pause On Focus Loss"),
 		FSUI_CSTR("Pauses the emulator when you minimize the window or switch to another application, and unpauses when you switch back."),
 		"UI", "PauseOnFocusLoss", false);
+#endif
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_GAMEPAD, "Pause On Controller Disconnection"),
 		FSUI_CSTR("Pauses the emulator when a controller with bindings is disconnected."), "UI", "PauseOnControllerDisconnection", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_RECTANGLE_LIST, "Pause On Menu"),
@@ -4255,7 +4255,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 			CloseChoiceDialog();
 		});
 	}
-
+#ifndef WINRT_XBOX
 	MenuHeading(FSUI_CSTR("Integration"));
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CIRCLE_USER, "Enable Discord Presence"),
 		FSUI_CSTR("Shows the game you are currently playing as part of your profile on Discord."), "EmuCore", "EnableDiscordPresence", false);
@@ -4270,7 +4270,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 		FSUI_CSTR("Hides the mouse pointer/cursor when the emulator is in fullscreen mode."), "UI", "HideMouseCursor", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_TABLET_SCREEN_BUTTON, "Start Big Picture UI"),
 		FSUI_CSTR("Automatically starts Big Picture Mode instead of the regular Qt interface when PCSX2 launches."), "UI", "StartBigPictureMode", false);
-
+#endif
 	MenuHeading(FSUI_CSTR("On-Screen Display"));
 	DrawIntSpinBoxSetting(bsi, FSUI_ICONSTR(ICON_FA_MAGNIFYING_GLASS, "OSD Scale"),
 		FSUI_CSTR("Determines how large the on-screen messages and monitors are."), "EmuCore/GS", "OsdScale", 100, 25, 500, 1, FSUI_CSTR("%d%%"));

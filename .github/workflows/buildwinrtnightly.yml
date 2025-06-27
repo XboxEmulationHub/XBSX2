@@ -1,0 +1,95 @@
+name: WinRT SSE4, AVX2 Dev Branch Builds 
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: ['Release', 'Release AVX2']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Set up NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Extract version string from AppxManifest
+      id: extract_version
+      run: |
+        $manifest = [xml](Get-Content pcsx2-winrt\Package.appxmanifest)
+        $version = $manifest.Package.Identity.Version
+        echo $version
+        echo version=$version >> $env:GITHUB_OUTPUT
+        
+    - name: Echo the GitHub Env for File Names
+      run: |
+        echo "${{ steps.extract_version.outputs.version }}"
+
+    - name: Restore NuGet packages
+      run: nuget restore PCSX2_qt.sln
+
+    - name: Download Patches
+      shell: cmd
+      run: |
+        cd bin/resources
+        aria2c -Z "https://github.com/PCSX2/pcsx2_patches/releases/tag/latest/download/patches.zip"
+  
+    - name: Download Dependencies
+      shell: cmd
+      run: |
+        aria2c -Z "https://github.com/XboxEmulationHub/xbsx2-dependencies/releases/download/dev/xbsx2-build-dependencies.7z"
+      
+    - name: Extract some files
+      run: 7z x xbsx2-build-dependencies.7z -o"./"
+
+    - name: Build the project
+      run: msbuild PCSX2_qt.sln /m /p:PlatformToolset=v143 /t:Restore,Rebuild /p:Configuration="${{ matrix.configuration }}" /p:Platform=x64 /t:restore,build /p:RestorePackagesConfig=true
+  
+    - name: Upload APPX file (SSE4)
+      if: matrix.configuration == 'Release'
+      uses: actions/upload-artifact@v4
+      with:
+        name: appx-${{ matrix.configuration }}
+        path: AppPackages
+        
+    - name: Upload APPX file (AVX2)
+      if: matrix.configuration == 'Release AVX2'
+      uses: actions/upload-artifact@v4
+      with:
+        name: appx-${{ matrix.configuration }}
+        path: AppPackages
+  
+#  Publish-release:
+#    needs: build
+#    name: Publish Release
+#    if: github.ref == 'refs/heads/uwp'
+#    permissions: write-all
+#    runs-on: ubuntu-22.04
+
+#    steps:
+#      - name: Download Artifacts
+#        uses: actions/download-artifact@v4.1.7
+#        with:
+#          path: ./artifacts/
+          
+#      - name: Create a new release
+#        uses: marvinpinto/action-automatic-releases@latest
+#        with:
+#          repo_token: ${{ secrets.GITHUB_TOKEN }}
+#         automatic_release_tag: latest
+#          prerelease: false
+#          title: Latest XBSX2 Builds
+#          files: | 
+#            ./artifacts/appx-Release/AppPackages/xbsx2/xbsx2_*_x64_Test/xbsx2_*_x64.msix
+#            ./artifacts/appx-Release\ AVX2/AppPackages/xbsx2/xbsx2_*_x64_Release\ AVX2_Test/xbsx2_*_x64_Release\ AVX2.msix

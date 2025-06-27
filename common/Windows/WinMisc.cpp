@@ -12,6 +12,9 @@
 #include <mmsystem.h>
 #include <timeapi.h>
 #include <VersionHelpers.h>
+#include <string>
+#include <Windows.h>
+#include <gamingdeviceinformation.h>
 
 // If anything tries to read this as an initializer, we're in trouble.
 static const LARGE_INTEGER lfreq = []() {
@@ -84,6 +87,53 @@ std::string GetOSVersionString()
 		retval = "Unsupported Operating System!";
 
 	return retval;
+}
+
+std::string GetConsoleModelString()
+{
+	std::string model;
+
+	// Get the Xbox console model information.
+	GAMING_DEVICE_MODEL_INFORMATION deviceInfo = {};
+	HRESULT hr = GetGamingDeviceModelInformation(&deviceInfo);
+
+	if (SUCCEEDED(hr))
+	{
+		switch (deviceInfo.deviceId)
+		{
+
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE:
+				model = "Xbox One";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S:
+				model = "Xbox One S";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X:
+				model = "Xbox One X";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X_DEVKIT:
+				model = "Xbox One X Developer Kit";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_S:
+				model = "Xbox Series S";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X:
+				model = "Xbox Series X";
+				break;
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT:
+				model = "Xbox Series X Developer Kit";
+				break;
+			default:
+				model = "Unknown Xbox model";
+				break;
+		}
+	}
+	else
+	{
+		model = "Error detecting console model";
+	}
+	
+	return model;
 }
 
 bool Common::InhibitScreensaver(bool inhibit)

@@ -42,6 +42,10 @@ static constexpr FPControlRegister DEFAULT_VU_FP_CONTROL_REGISTER = FPControlReg
 
 Pcsx2Config EmuConfig;
 
+#ifdef WINRT_XBOX
+#include "pcsx2-winrt/UWPUtils.h"
+#endif
+
 const char* SettingInfo::StringDefaultValue() const
 {
 	return default_value ? default_value : "";
@@ -2211,7 +2215,10 @@ bool EmuFolders::SetDataDirectory(Error* error)
 		// Also check if the user has overriden the DataRoot path.
 		if (EmuConfig.CustomDataPath.empty())
 		{
-#if defined(_WIN32)
+#if defined(WINRT_XBOX)
+			// On Xbox, use the local app data folder.
+			EmuFolders::DataRoot = UWP::GetLocalFolder();
+#elif defined(_WIN32)
 			// On Windows, use My Documents\PCSX2 to match old installs.
 			PWSTR documents_directory;
 			if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &documents_directory)))

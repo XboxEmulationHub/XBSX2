@@ -184,6 +184,9 @@ extern const u32 SPIN_TIME_NS;
 
 extern std::string GetOSVersionString();
 
+/// Returns a string describing the console model.
+extern std::string GetConsoleModelString();
+
 struct CPUInfo {
 	std::string name;
 	u32 num_big_cores;

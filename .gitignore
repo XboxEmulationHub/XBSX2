@@ -97,6 +97,10 @@ oprofile_data/
 /bin/AppX
 /bin/portable.ini
 /bin/portable.txt
+/bin/AppxManifest.xml
+/bin/resources.pri
+/bin/XBSX2.build.appxrecipe
+/bin/ForBundle/AppxManifest.xml
 
 # Resources and docs copied from /bin
 /bin-arm64

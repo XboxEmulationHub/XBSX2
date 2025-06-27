@@ -40,6 +40,8 @@
 #include "GS/Renderers/DX12/GSDevice12.h"
 #include "GS/Renderers/DX11/D3D.h"
 
+#endif
+
 #ifdef WINRT_XBOX
 #pragma comment(lib, "mincore")
 #endif

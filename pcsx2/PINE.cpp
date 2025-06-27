@@ -636,7 +636,7 @@ PINEServer::IPCBuffer PINEServer::ParseCommand(std::span<u8> buf, std::vector<u8
 					goto error;
 				ToResultVector(ret_buffer, size, ret_cnt);
 				ret_cnt += 4;
-				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "PCSX2 %s", BuildVersion::GitRev);
+				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
 				ret_cnt += size;
 				break;
 			}

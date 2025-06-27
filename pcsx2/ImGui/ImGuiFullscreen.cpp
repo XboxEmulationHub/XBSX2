@@ -2214,14 +2214,14 @@ void ImGuiFullscreen::OpenFileSelector(std::string_view title, bool select_direc
 {
 	if (initial_directory.empty() || !FileSystem::DirectoryExists(initial_directory.c_str()))
 		initial_directory = FileSystem::GetWorkingDirectory();
-
+#ifndef WINRT_XBOX
 	if (Host::ShouldPreferHostFileSelector())
 	{
 		Host::OpenHostFileSelectorAsync(ImGuiManager::StripIconCharacters(title), select_directory, std::move(callback),
 			std::move(filters), initial_directory);
 		return;
 	}
-
+#endif
 	if (s_file_selector_open)
 		CloseFileSelector();
 

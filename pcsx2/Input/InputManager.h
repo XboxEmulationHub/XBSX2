@@ -25,7 +25,7 @@ enum class InputSourceType : u32
 	Pointer,
 	SDL,
 #ifdef _WIN32
-#if !WINRT_XBOX
+#ifndef WINRT_XBOX
 	DInput,
 #endif
 	XInput,

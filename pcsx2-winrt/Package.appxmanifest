@@ -6,7 +6,7 @@
     Version="2.0.8.4" />
   <mp:PhoneIdentity PhoneProductId="595c25f0-b370-4d7a-9b14-3027fbd69ecf" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
   <Properties>
-    <DisplayName>pcsx2-winrt</DisplayName>
+    <DisplayName>XBSX2</DisplayName>
     <PublisherDisplayName>SternXD</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -18,7 +18,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="pcsx2_winrt.App">
-      <uap:VisualElements DisplayName="pcsx2-winrt" Description="XBSX2 UWP/WinRT - The PlayStation 2 Emulator for Xbox Series/Xbox One"
+      <uap:VisualElements DisplayName="XBSX2" Description="XBSX2 UWP/WinRT - The PlayStation 2 Emulator for Xbox Series/Xbox One"
         Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" BackgroundColor="transparent">
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
         <uap:DefaultTile/>
@@ -38,5 +38,6 @@
 		<Capability Name="internetClient" />
 		<Capability Name="codeGeneration"/>
 		<Capability Name="internetClientServer"/>
+
 	</Capabilities>
 </Package>

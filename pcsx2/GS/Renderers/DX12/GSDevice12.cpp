@@ -26,11 +26,13 @@
 #include <sstream>
 #include <limits>
 
+#ifndef WINRT_XBOX
 #ifdef ENABLE_OGL_DEBUG
 #define USE_PIX
 #include "WinPixEventRuntime/pix3.h"
 
 static u32 s_debug_scope_depth = 0;
+#endif
 #endif
 
 static bool IsDATMConvertShader(ShaderConvert i)
@@ -910,7 +912,7 @@ bool GSDevice12::CreateSwapChain()
 #else
 	Console.WriteLn("Creating a %dx%d winrt swap chain", swap_chain_desc.Width, swap_chain_desc.Height);
 	hr = m_dxgi_factory->CreateSwapChainForCoreWindow(
-		g_d3d12_context->GetCommandQueue(), static_cast<::IUnknown*>(m_window_info.surface_handle), &swap_chain_desc, nullptr, m_swap_chain.put());
+		m_command_queue.get(), static_cast<::IUnknown*>(m_window_info.surface_handle), &swap_chain_desc, nullptr, m_swap_chain.put());
 #endif
 
 	if (!CreateSwapChainRTV())
@@ -1161,7 +1163,7 @@ void GSDevice12::EndPresent()
 
 	InvalidateCachedState();
 }
-
+#ifndef WINRT_XBOX
 #ifdef ENABLE_OGL_DEBUG
 static UINT Palette(float phase, const std::array<float, 3>& a, const std::array<float, 3>& b,
 	const std::array<float, 3>& c, const std::array<float, 3>& d)
@@ -1175,9 +1177,11 @@ static UINT Palette(float phase, const std::array<float, 3>& a, const std::array
 		static_cast<BYTE>(result[2] * 255.0f));
 }
 #endif
+#endif
 
 void GSDevice12::PushDebugGroup(const char* fmt, ...)
 {
+#ifndef WINRT_XBOX
 #ifdef ENABLE_OGL_DEBUG
 	if (!GSConfig.UseDebugDevice)
 		return;
@@ -1192,10 +1196,12 @@ void GSDevice12::PushDebugGroup(const char* fmt, ...)
 
 	PIXBeginEvent(GetCommandList(), color, "%s", buf.c_str());
 #endif
+#endif
 }
 
 void GSDevice12::PopDebugGroup()
 {
+#ifndef WINRT_XBOX
 #ifdef ENABLE_OGL_DEBUG
 	if (!GSConfig.UseDebugDevice)
 		return;
@@ -1204,10 +1210,12 @@ void GSDevice12::PopDebugGroup()
 
 	PIXEndEvent(GetCommandList());
 #endif
+#endif
 }
 
 void GSDevice12::InsertDebugMessage(DebugMessageCategory category, const char* fmt, ...)
 {
+#ifndef WINRT_XBOX
 #ifdef ENABLE_OGL_DEBUG
 	if (!GSConfig.UseDebugDevice)
 		return;
@@ -1234,6 +1242,7 @@ void GSDevice12::InsertDebugMessage(DebugMessageCategory category, const char* f
 		static_cast<BYTE>(fcolor[2] * 255.0f));
 
 	PIXSetMarker(GetCommandList(), color, "%s", buf.c_str());
+#endif
 #endif
 }
 

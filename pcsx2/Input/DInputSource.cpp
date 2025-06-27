@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
+#if !WINRT_XBOX
+
 #define INITGUID
 
 #include "Input/DInputSource.h"

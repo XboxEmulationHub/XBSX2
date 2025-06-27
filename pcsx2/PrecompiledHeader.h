@@ -13,6 +13,7 @@
 #define NOMINMAX
 #define UNICODE
 #define _UNICODE
+#define _M_X86
 #endif
 
 #include "common/Pcsx2Defs.h"

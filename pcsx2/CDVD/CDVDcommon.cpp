@@ -302,8 +302,7 @@ void CDVDsys_SetFile(CDVD_SourceType srctype, std::string newfile)
 		if (driveType == DRIVE_REMOVABLE)
 		{
 			Host::AddIconOSDMessage("RemovableDriveWarning", ICON_FA_TRIANGLE_EXCLAMATION,
-				TRANSLATE_SV("CDVD", "Game disc location is on a removable drive, performance issues such as jittering "
-									 "and freezing may occur."),
+				TRANSLATE_SV("CDVD", "Game disc location is on a Removable Drive."),
 				Host::OSD_WARNING_DURATION);
 		}
 	}

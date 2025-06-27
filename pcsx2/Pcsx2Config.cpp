@@ -42,6 +42,10 @@ static constexpr FPControlRegister DEFAULT_VU_FP_CONTROL_REGISTER = FPControlReg
 
 Pcsx2Config EmuConfig;
 
+#ifdef WINRT_XBOX
+#include "pcsx2-winrt/UWPUtils.h"
+#endif
+
 const char* SettingInfo::StringDefaultValue() const
 {
 	return default_value ? default_value : "";
@@ -2133,19 +2137,16 @@ void EmuFolders::SetAppRoot()
 
 bool EmuFolders::SetResourcesDirectory()
 {
-#ifndef __APPLE__
-#ifndef PCSX2_APP_DATADIR
+#ifdef WINRT_XBOX
+	Resources = "./resources";
+
+#elif !defined(__APPLE__)
 	// On Windows/Linux, these are in the binary directory.
 	Resources = Path::Combine(AppRoot, "resources");
 #else
-	Resources = Path::Canonicalize(Path::Combine(AppRoot, PCSX2_APP_DATADIR "/resources"));
-#endif
-#else
 	// On macOS, this is in the bundle resources directory.
-	if (auto resources = CocoaTools::GetResourcePath())
-		Resources = *resources;
-	else
-		Resources = Path::Combine(AppRoot, "resources");
+	const std::string program_path = FileSystem::GetProgramPath();
+	Resources = Path::Canonicalize(Path::Combine(Path::GetDirectory(program_path), "../Resources"));
 #endif
 
 	Console.WriteLnFmt("Resources Directory: {}", Resources);
@@ -2185,7 +2186,9 @@ bool EmuFolders::SetDataDirectory(Error* error)
 {
 	if (!ShouldUsePortableMode())
 	{
-#if defined(_WIN32)
+#if defined(WINRT_XBOX)
+		EmuFolders::DataRoot = UWP::GetLocalFolder();
+#elif defined(_WIN32)
 		// On Windows, use My Documents\PCSX2 to match old installs.
 		PWSTR documents_directory;
 		if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Documents, 0, NULL, &documents_directory)))

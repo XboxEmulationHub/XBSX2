@@ -271,7 +271,11 @@ __ri void ImGuiManager::DrawPerformanceOverlay(float& position_y, float scale, f
 			}
 
 			if (GSConfig.OsdShowVersion)
+#ifndef WINRT_XBOX
 				s_speed_line.append_format("{}PCSX2 {}", s_speed_line.empty() ? "" : " | ", BuildVersion::GitRev);
+#else
+				s_speed_line.append_format("{}XBSX2 {}", s_speed_line.empty() ? "" : " | ", BuildVersion::GitRev);
+#endif
 
 			if (!s_speed_line.empty())
 			{

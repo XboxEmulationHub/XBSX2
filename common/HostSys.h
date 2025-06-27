@@ -191,6 +191,7 @@ extern const u32 SPIN_TIME_NS;
 [[noreturn]] void AbortWithMessage(const char* msg);
 
 extern std::string GetOSVersionString();
+extern std::string GetConsoleModelString(); // Returns the model of the console, e.g. "Xbox Series S", "Xbox Series X", Xbox One S", "Xbox One X", etc.
 
 struct CPUInfo {
 	std::string name;

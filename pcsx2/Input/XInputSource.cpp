@@ -134,12 +134,17 @@ bool XInputSource::Initialize(SettingsInterface& si, std::unique_lock<std::mutex
 	m_xinput_module = LoadLibraryExW(L"xinput1_3", nullptr, LOAD_LIBRARY_SEARCH_APPLICATION_DIR);
 	if (!m_xinput_module)
 	{
+		m_xinput_module = LoadLibraryW(L"xinputuap");
+	}
+	if (!m_xinput_module)
+	{
 		m_xinput_module = LoadLibraryW(L"xinput1_4");
 	}
 	if (!m_xinput_module)
 	{
 		m_xinput_module = LoadLibraryW(L"xinput9_1_0");
 	}
+
 	if (!m_xinput_module)
 	{
 		Console.Error("Failed to load XInput module.");
@@ -147,12 +152,11 @@ bool XInputSource::Initialize(SettingsInterface& si, std::unique_lock<std::mutex
 	}
 
 	// Try the hidden version of XInputGetState(), which lets us query the guide button.
-#if !WINRT_XBOX
+#ifndef WINRT_XBOX
 	m_xinput_get_state = reinterpret_cast<decltype(m_xinput_get_state)>(GetProcAddress(m_xinput_module, reinterpret_cast<LPCSTR>(100)));
 #endif
 
-	if (!m_xinput_get_state)
-		m_xinput_get_state = reinterpret_cast<decltype(m_xinput_get_state)>(GetProcAddress(m_xinput_module, "XInputGetState"));
+	m_xinput_get_state = reinterpret_cast<decltype(m_xinput_get_state)>(GetProcAddress(m_xinput_module, "XInputGetState"));
 	m_xinput_set_state = reinterpret_cast<decltype(m_xinput_set_state)>(GetProcAddress(m_xinput_module, "XInputSetState"));
 	m_xinput_get_capabilities =
 		reinterpret_cast<decltype(m_xinput_get_capabilities)>(GetProcAddress(m_xinput_module, "XInputGetCapabilities"));

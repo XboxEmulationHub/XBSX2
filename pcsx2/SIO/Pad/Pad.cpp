@@ -213,7 +213,7 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 #ifndef WINRT_XBOX
 	MapController(si, 0, InputManager::GetGenericBindingMapping("Keyboard"));
 #else
-	MapController(si, 0, InputManager::GetGenericBindingMapping("XInput Controller 0"));
+	MapController(si, 0, InputManager::GetGenericBindingMapping("XInput-0"));
 #endif
 }
 

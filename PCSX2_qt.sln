@@ -126,7 +126,6 @@ Global
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Devel|x64.Build.0 = Devel|x64
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release AVX2|ARM64.ActiveCfg = Release Clang|ARM64
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release AVX2|x64.ActiveCfg = Release AVX2|x64
-		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release AVX2|x64.Build.0 = Release AVX2|x64
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release Clang AVX2|ARM64.ActiveCfg = Release Clang|ARM64
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release Clang AVX2|x64.ActiveCfg = Release Clang AVX2|x64
 		{2A016F21-87AE-4154-8271-1F57E91408E9}.Release Clang AVX2|x64.Build.0 = Release Clang AVX2|x64
@@ -1115,7 +1114,6 @@ Global
 		{5E7B753A-B43D-43AA-A373-BBA85F9FAC80}.Release|x64.ActiveCfg = Release|x64
 		{5E7B753A-B43D-43AA-A373-BBA85F9FAC80}.Release|x64.Build.0 = Release|x64
 		{5E7B753A-B43D-43AA-A373-BBA85F9FAC80}.Release|x64.Deploy.0 = Release|x64
-
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

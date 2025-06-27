@@ -25,8 +25,8 @@
 #define MTGS_LOG Console.WriteLn
 #else
 #define MTGS_LOG(...) \
-	do                \
-	{                 \
+	do \
+	{ \
 	} while (0)
 #endif
 

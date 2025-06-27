@@ -1896,7 +1896,7 @@ void FullscreenUI::DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size)
 				logo_pos, logo_pos + logo_size);
 			dl->AddText(heading_font.first, heading_font.second,
 				ImVec2(logo_pos.x + logo_size.x + LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING), logo_pos.y),
-				ImGui::GetColorU32(ImGuiCol_Text), "PCSX2");
+				ImGui::GetColorU32(ImGuiCol_Text), "XBSX2");
 		}
 
 		// draw time
@@ -1991,7 +1991,7 @@ void FullscreenUI::DrawLandingWindow()
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
 		ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
-		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not contact PCSX2 for any help with Xbox/XBSX2 related issues.");
+		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
 	}
 	ImGui::PopStyleColor();
 
@@ -2120,12 +2120,12 @@ void FullscreenUI::DrawExitWindow()
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
 
-		if (HorizontalMenuSvgItem("fullscreenui/exit.svg", FSUI_CSTR("Exit PCSX2"),
-				FSUI_CSTR("Completely exits the application, returning you to your desktop.")))
+		if (HorizontalMenuSvgItem("fullscreenui/exit.svg", FSUI_CSTR("Exit XBSX2"),
+				FSUI_CSTR("This exits the application back to Dev Home.")))
 		{
 			DoRequestExit();
 		}
-
+#ifndef WINRT_XBOX // XBox/UWP: No Qt support on UWP
 		if (!Host::InNoGUIMode())
 		{
 			if (HorizontalMenuSvgItem("fullscreenui/desktop-mode.svg", FSUI_CSTR("Desktop Mode"),
@@ -2134,7 +2134,7 @@ void FullscreenUI::DrawExitWindow()
 				DoDesktopMode();
 			}
 		}
-
+#endif // !WINRT_XBOX
 	EndHorizontalMenu();
 
 	ImGui::PopStyleColor();
@@ -4255,7 +4255,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 			CloseChoiceDialog();
 		});
 	}
-#ifndef WINRT_XBOX
+#ifndef WINRT_XBOX // XBox/UWP: No RPC support (Discord), and no need to start fullscreen since we are always fullscreen
 	MenuHeading(FSUI_CSTR("Integration"));
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CIRCLE_USER, "Enable Discord Presence"),
 		FSUI_CSTR("Shows the game you are currently playing as part of your profile on Discord."), "EmuCore", "EnableDiscordPresence", false);
@@ -4537,7 +4537,7 @@ void FullscreenUI::DrawEmulationSettingsPage()
 		FSUI_CSTR("Speeds up emulation so that the guest refresh rate matches the host."), "EmuCore/GS", "SyncToHostRefreshRate", false);
 
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_PF_HEARTBEAT_CIRCLE, "Use Host VSync Timing"),
-		FSUI_CSTR("Disables PCSX2's internal frame timing, and uses host vsync instead."), "EmuCore/GS", "UseVSyncForTiming", false,
+		FSUI_CSTR("Disables XBSX2's internal frame timing, and uses host vsync instead."), "EmuCore/GS", "UseVSyncForTiming", false,
 		GetEffectiveBoolSetting(bsi, "EmuCore/GS", "VsyncEnable", false) && GetEffectiveBoolSetting(bsi, "EmuCore/GS", "SyncToHostRefreshRate", false));
 
 	EndMenuButtons();
@@ -6555,7 +6555,7 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 	if (!IsEditingGameSettings(bsi))
 	{
 		DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_BIOHAZARD, "Show Advanced Settings"),
-			FSUI_CSTR("Changing these options may cause games to become non-functional. Modify at your own risk, the PCSX2 team will not "
+			FSUI_CSTR("Changing these options may cause games to become non-functional. Modify at your own risk, the XBSX2 team will not "
 					  "provide support for configurations with these settings changed."),
 			"UI", "ShowAdvancedSettings", false);
 	}
@@ -6744,7 +6744,7 @@ void FullscreenUI::DrawPatchesOrCheatsSettingsPage(bool cheats)
 					 FSUI_CSTR("Activating game patches can cause unpredictable behavior, crashing, soft-locks, or broken saved games."),
 			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
 		ActiveButton(
-			FSUI_CSTR("Use patches at your own risk, the PCSX2 team will provide no support for users who have enabled game patches."),
+			FSUI_CSTR("Use patches at your own risk, the XBSX2 team will provide no support for users who have enabled game patches."),
 			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
 	}
 
@@ -8640,7 +8640,7 @@ void FullscreenUI::DrawAboutWindow()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(10.0f));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, LayoutScale(30.0f, 30.0f));
 
-	if (ImGui::BeginPopupModal(FSUI_CSTR("About PCSX2"), &s_about_window_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
+	if (ImGui::BeginPopupModal(FSUI_CSTR("About XBSX2"), &s_about_window_open, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
 	{
 		const ImVec2 image_size = LayoutScale(500.0f, 76.0f);
 		const ImRect image_bb(ImGui::GetCursorScreenPos(), ImGui::GetCursorScreenPos() + ImVec2(ImGui::GetCurrentWindow()->WorkRect.GetWidth(), image_size.y));
@@ -9028,7 +9028,7 @@ void FullscreenUI::DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& se
 
 	MenuHeading(FSUI_CSTR("Settings"));
 	check_challenge_state = DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_TROPHY, "Enable Achievements"),
-		FSUI_CSTR("When enabled and logged in, PCSX2 will scan for achievements on startup."), "Achievements", "Enabled", false);
+		FSUI_CSTR("When enabled and logged in, XBSX2 will scan for achievements on startup."), "Achievements", "Enabled", false);
 
 	const bool enabled = bsi->GetBoolValue("Achievements", "Enabled", false);
 
@@ -9083,11 +9083,11 @@ void FullscreenUI::DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& se
 		FSUI_CSTR("When enabled, each session will behave as if no achievements have been unlocked."), "Achievements", "EncoreMode", false,
 		enabled);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_EYE, "Spectator Mode"),
-		FSUI_CSTR("When enabled, PCSX2 will assume all achievements are locked and not send any unlock notifications to the server."),
+		FSUI_CSTR("When enabled, XBSX2 will assume all achievements are locked and not send any unlock notifications to the server."),
 		"Achievements", "SpectatorMode", false, enabled);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_MEDAL, "Test Unofficial Achievements"),
 		FSUI_CSTR(
-			"When enabled, PCSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements."),
+			"When enabled, XBSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements."),
 		"Achievements", "UnofficialTestMode", false, enabled);
 
 	// Check for challenge mode just being enabled.
@@ -9350,7 +9350,7 @@ TRANSLATE_NOOP("FullscreenUI", "Launch a game from a file, disc, or starts the c
 TRANSLATE_NOOP("FullscreenUI", "Settings");
 TRANSLATE_NOOP("FullscreenUI", "Changes settings for the application.");
 TRANSLATE_NOOP("FullscreenUI", "Exit");
-TRANSLATE_NOOP("FullscreenUI", "Return to desktop mode, or exit the application.");
+TRANSLATE_NOOP("FullscreenUI", "This exits the application back to Dev Home.");
 TRANSLATE_NOOP("FullscreenUI", "Start File");
 TRANSLATE_NOOP("FullscreenUI", "Launch a game by selecting a file/disc image.");
 TRANSLATE_NOOP("FullscreenUI", "Start Disc");
@@ -9359,8 +9359,7 @@ TRANSLATE_NOOP("FullscreenUI", "Start BIOS");
 TRANSLATE_NOOP("FullscreenUI", "Start the console without any disc inserted.");
 TRANSLATE_NOOP("FullscreenUI", "Back");
 TRANSLATE_NOOP("FullscreenUI", "Return to the previous menu.");
-TRANSLATE_NOOP("FullscreenUI", "Exit PCSX2");
-TRANSLATE_NOOP("FullscreenUI", "Completely exits the application, returning you to your desktop.");
+TRANSLATE_NOOP("FullscreenUI", "Exit XBSX2");
 TRANSLATE_NOOP("FullscreenUI", "Desktop Mode");
 TRANSLATE_NOOP("FullscreenUI", "Exits Big Picture mode, returning to the desktop interface.");
 TRANSLATE_NOOP("FullscreenUI", "-");
@@ -9457,7 +9456,7 @@ TRANSLATE_NOOP("FullscreenUI", "Sets the number of frames which can be queued.")
 TRANSLATE_NOOP("FullscreenUI", "Synchronize EE and GS threads after each frame. Lowest input latency, but increases system requirements.");
 TRANSLATE_NOOP("FullscreenUI", "Synchronizes frame presentation with host refresh.");
 TRANSLATE_NOOP("FullscreenUI", "Speeds up emulation so that the guest refresh rate matches the host.");
-TRANSLATE_NOOP("FullscreenUI", "Disables PCSX2's internal frame timing, and uses host vsync instead.");
+TRANSLATE_NOOP("FullscreenUI", "Disables XBSX2's internal frame timing, and uses host vsync instead.");
 TRANSLATE_NOOP("FullscreenUI", "Graphics API");
 TRANSLATE_NOOP("FullscreenUI", "Selects the API used to render the emulated GS.");
 TRANSLATE_NOOP("FullscreenUI", "Display");
@@ -9648,7 +9647,7 @@ TRANSLATE_NOOP("FullscreenUI", "Determines the pressure required to activate the
 TRANSLATE_NOOP("FullscreenUI", "Toggle every %d frames");
 TRANSLATE_NOOP("FullscreenUI", "Clears all bindings for this USB controller.");
 TRANSLATE_NOOP("FullscreenUI", "Data Save Locations");
-TRANSLATE_NOOP("FullscreenUI", "Changing these options may cause games to become non-functional. Modify at your own risk, the PCSX2 team will not provide support for configurations with these settings changed.");
+TRANSLATE_NOOP("FullscreenUI", "Changing these options may cause games to become non-functional. Modify at your own risk, the XBSX2 team will not provide support for configurations with these settings changed.");
 TRANSLATE_NOOP("FullscreenUI", "Logging");
 TRANSLATE_NOOP("FullscreenUI", "Writes log messages to the system console (console window/standard output).");
 TRANSLATE_NOOP("FullscreenUI", "Writes log messages to emulog.txt.");
@@ -9701,7 +9700,7 @@ TRANSLATE_NOOP("FullscreenUI", "No patches are available for this game.");
 TRANSLATE_NOOP("FullscreenUI", "Game Patches");
 TRANSLATE_NOOP("FullscreenUI", "Activating cheats can cause unpredictable behavior, crashing, soft-locks, or broken saved games.");
 TRANSLATE_NOOP("FullscreenUI", "Activating game patches can cause unpredictable behavior, crashing, soft-locks, or broken saved games.");
-TRANSLATE_NOOP("FullscreenUI", "Use patches at your own risk, the PCSX2 team will provide no support for users who have enabled game patches.");
+TRANSLATE_NOOP("FullscreenUI", "Use patches at your own risk, the XBSX2 team will provide no support for users who have enabled game patches.");
 TRANSLATE_NOOP("FullscreenUI", "Game Fixes");
 TRANSLATE_NOOP("FullscreenUI", "Game fixes should not be modified unless you are aware of what each option does and the implications of doing so.");
 TRANSLATE_NOOP("FullscreenUI", "FPU Multiply Hack");
@@ -9761,8 +9760,8 @@ TRANSLATE_NOOP("FullscreenUI", "Cover Settings");
 TRANSLATE_NOOP("FullscreenUI", "Downloads covers from a user-specified URL template.");
 TRANSLATE_NOOP("FullscreenUI", "Identifies any new files added to the game directories.");
 TRANSLATE_NOOP("FullscreenUI", "Forces a full rescan of all games previously identified.");
-TRANSLATE_NOOP("FullscreenUI", "About PCSX2");
-TRANSLATE_NOOP("FullscreenUI", "PCSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. This allows you to play PS2 games on your PC, with many additional features and benefits.");
+TRANSLATE_NOOP("FullscreenUI", "About XBSX2");
+TRANSLATE_NOOP("FullscreenUI", "XBSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. This allows you to play PS2 games on your PC, with many additional features and benefits.");
 TRANSLATE_NOOP("FullscreenUI", "PlayStation 2 and PS2 are registered trademarks of Sony Interactive Entertainment. This application is not affiliated in any way with Sony Interactive Entertainment.");
 TRANSLATE_NOOP("FullscreenUI", "Version: %s");
 TRANSLATE_NOOP("FullscreenUI", "RetroAchievements");
@@ -9772,7 +9771,7 @@ TRANSLATE_NOOP("FullscreenUI", "Password");
 TRANSLATE_NOOP("FullscreenUI", "Logging in...");
 TRANSLATE_NOOP("FullscreenUI", "Login");
 TRANSLATE_NOOP("FullscreenUI", "Cancel");
-TRANSLATE_NOOP("FullscreenUI", "When enabled and logged in, PCSX2 will scan for achievements on startup.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled and logged in, XBSX2 will scan for achievements on startup.");
 TRANSLATE_NOOP("FullscreenUI", "\"Challenge\" mode for achievements, including leaderboard tracking. Disables save state, cheats, and slowdown functions.");
 TRANSLATE_NOOP("FullscreenUI", "Displays popup messages on events such as achievement unlocks and leaderboard submissions.");
 TRANSLATE_NOOP("FullscreenUI", "Displays popup messages when starting, submitting, or failing a leaderboard challenge.");
@@ -9782,8 +9781,8 @@ TRANSLATE_NOOP("FullscreenUI", "Shows icons in the screen when leaderboard track
 TRANSLATE_NOOP("FullscreenUI", "Determines where achievement/leaderboard overlays are positioned on the screen.");
 TRANSLATE_NOOP("FullscreenUI", "Determines where achievement/leaderboard notification popups are positioned on the screen.");
 TRANSLATE_NOOP("FullscreenUI", "When enabled, each session will behave as if no achievements have been unlocked.");
-TRANSLATE_NOOP("FullscreenUI", "When enabled, PCSX2 will assume all achievements are locked and not send any unlock notifications to the server.");
-TRANSLATE_NOOP("FullscreenUI", "When enabled, PCSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled, XBSX2 will assume all achievements are locked and not send any unlock notifications to the server.");
+TRANSLATE_NOOP("FullscreenUI", "When enabled, XBSX2 will list achievements from unofficial sets. These achievements are not tracked by RetroAchievements.");
 TRANSLATE_NOOP("FullscreenUI", "Sound Effects");
 TRANSLATE_NOOP("FullscreenUI", "Account");
 TRANSLATE_NOOP("FullscreenUI", "Logs out of RetroAchievements.");

@@ -70,6 +70,9 @@ oprofile_data/
 /bin/**/*.ilk
 /bin/**/*.lib
 /bin/**/*.pdb
+/bin/**/*.pch
+/bin/**/*.idb
+/bin/**/*.exe
 /bin/pcsx2*
 /bin/qt.conf
 /bin/bios
@@ -91,6 +94,7 @@ oprofile_data/
 /bin/translations
 /bin/inputprofiles
 /bin/videos
+/bin/AppX
 /bin/portable.ini
 /bin/portable.txt
 
@@ -131,8 +135,7 @@ CMakeSettings.json
 /pcsx2-winrt/Generated Files/winrt
 /pcsx2-winrt/BundleArtifacts
 /pcsx2/pcsx2core.vcxproj.filters
-/AppPackages/
-/bin
+/AppPackages
 /findstr_CLI.bat
 /findstr_CLI(1).bat
 /packages

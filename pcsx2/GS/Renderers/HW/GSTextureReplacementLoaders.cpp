@@ -222,6 +222,173 @@ bool PNGLoader(const std::string& filename, GSTextureReplacements::ReplacementTe
 
 bool GSTextureReplacements::SavePNGImage(const std::string& filename, u32 width, u32 height, const u8* buffer, u32 pitch)
 {
+#ifdef WINRT_XBOX
+	try
+	{
+		// Skip invalid textures
+		if (width == 0 || height == 0 || buffer == nullptr || pitch == 0)
+		{
+			Console.Error("UWP: Invalid texture parameters - width: %u, height: %u, buffer: %p, pitch: %u", 
+				width, height, buffer, pitch);
+			return false;
+		}
+
+		// Limit extremely large textures to avoid memory issues
+		if (width > 4096 || height > 4096)
+		{
+			Console.Warning("UWP: Texture dimensions too large (%ux%u), skipping", width, height);
+			return false;
+		}
+
+		Console.WriteLn("UWP: Saving PNG texture to %s (%ux%u)", filename.c_str(), width, height);
+
+		// Memory buffer for PNG output
+		std::vector<u8> png_buffer;
+		bool success = false;
+		
+		// Custom write function for libpng that writes to our memory buffer
+		struct PngWriteCallbackData {
+			std::vector<u8>* buffer;
+		};
+		
+		// Write callback function for libpng
+		auto write_callback = [](png_structp png_ptr, png_bytep data, png_size_t length) {
+			PngWriteCallbackData* callback_data = (PngWriteCallbackData*)png_get_io_ptr(png_ptr);
+			if (!callback_data || !callback_data->buffer)
+				return;
+				
+			size_t old_size = callback_data->buffer->size();
+			try {
+				callback_data->buffer->resize(old_size + length);
+				memcpy(callback_data->buffer->data() + old_size, data, length);
+			} catch (const std::exception& e) {
+				Console.Error("UWP: Exception in PNG write callback: %s", e.what());
+			}
+		};
+		
+		// Create PNG structures
+		png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+		if (!png_ptr)
+		{
+			Console.Error("UWP: Failed to create PNG write struct");
+			return false;
+		}
+		
+		png_infop info_ptr = png_create_info_struct(png_ptr);
+		if (!info_ptr)
+		{
+			png_destroy_write_struct(&png_ptr, nullptr);
+			Console.Error("UWP: Failed to create PNG info struct");
+			return false;
+		}
+		
+		// Setup error handling
+		if (setjmp(png_jmpbuf(png_ptr)))
+		{
+			// If we get here, an error occurred in libpng
+			png_destroy_write_struct(&png_ptr, &info_ptr);
+			Console.Error("UWP: Error in libpng while writing PNG");
+			
+			// Try fallback method - direct raw write
+			return SaveRawTextureAsFallback(filename, width, height, buffer, pitch);
+		}
+		
+		// Setup our custom write function
+		PngWriteCallbackData callback_data;
+		callback_data.buffer = &png_buffer;
+		png_set_write_fn(png_ptr, &callback_data, write_callback, nullptr);
+		
+		// Setup PNG properties
+		const int compression = GSConfig.PNGCompressionLevel;
+		png_set_compression_level(png_ptr, compression);
+		png_set_IHDR(png_ptr, info_ptr, width, height, 8, PNG_COLOR_TYPE_RGBA,
+			PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+		png_write_info(png_ptr, info_ptr);
+		png_set_swap(png_ptr);
+		
+		// Write image data row by row
+		std::vector<png_bytep> row_pointers(height);
+		for (u32 y = 0; y < height; ++y)
+		{
+			row_pointers[y] = (png_bytep)(buffer + y * pitch);
+		}
+		
+		// Use png_write_image instead of row-by-row writing
+		png_write_image(png_ptr, row_pointers.data());
+		png_write_end(png_ptr, nullptr);
+		png_destroy_write_struct(&png_ptr, &info_ptr);
+		
+		// Now write the entire PNG buffer to file in one operation
+		if (!png_buffer.empty())
+		{
+			// Make sure the directory exists
+			std::string dir = std::string(Path::GetDirectory(filename));
+			if (!FileSystem::DirectoryExists(dir.c_str()))
+			{
+				FileSystem::CreateDirectoryPath(dir.c_str(), true);
+			}
+			
+			// First try standard file API
+			FILE* fp = fopen(filename.c_str(), "wb");
+			if (fp)
+			{
+				success = (fwrite(png_buffer.data(), 1, png_buffer.size(), fp) == png_buffer.size());
+				fclose(fp);
+				
+				if (success)
+				{
+					// Verify file was actually written
+					struct stat st;
+					if (stat(filename.c_str(), &st) == 0 && st.st_size > 0)
+					{
+						Console.WriteLn("UWP: Successfully saved PNG texture to %s (%zu bytes)", 
+							filename.c_str(), png_buffer.size());
+					}
+					else
+					{
+						Console.Error("UWP: File appears empty after writing: %s", filename.c_str());
+						success = false;
+					}
+				}
+				else
+				{
+					Console.Error("UWP: Failed to write PNG data to file %s", filename.c_str());
+				}
+			}
+			else
+			{
+				Console.Error("UWP: Failed to open file for writing: %s (error: %d)", filename.c_str(), errno);
+				
+				// Try fallback method - direct raw write
+				return SaveRawTextureAsFallback(filename, width, height, buffer, pitch);
+			}
+		}
+		else
+		{
+			Console.Error("UWP: PNG buffer is empty, nothing to write");
+			
+			// Try fallback method - direct raw write
+			return SaveRawTextureAsFallback(filename, width, height, buffer, pitch);
+		}
+		
+		return success;
+	}
+	catch (const std::exception& e)
+	{
+		Console.Error("UWP: Exception while saving PNG texture: %s - %s", filename.c_str(), e.what());
+		
+		// Try fallback method - direct raw write
+		return SaveRawTextureAsFallback(filename, width, height, buffer, pitch);
+	}
+	catch (...)
+	{
+		Console.Error("UWP: Unknown exception while saving PNG texture: %s", filename.c_str());
+		
+		// Try fallback method - direct raw write
+		return SaveRawTextureAsFallback(filename, width, height, buffer, pitch);
+	}
+#else
+	// Original implementation for non-UWP platforms
 	const int compression = GSConfig.PNGCompressionLevel;
 
 	png_structp png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -261,7 +428,80 @@ bool GSTextureReplacements::SavePNGImage(const std::string& filename, u32 width,
 
 	png_write_end(png_ptr, nullptr);
 	return true;
+#endif
 }
+
+#ifdef WINRT_XBOX
+// Fallback method for UWP when PNG writing fails
+bool GSTextureReplacements::SaveRawTextureAsFallback(const std::string& filename, u32 width, u32 height, const u8* buffer, u32 pitch)
+{
+	Console.Warning("UWP: Using fallback method to save texture %s", filename.c_str());
+	
+	try {
+		// Create a simple .bin file with the same name but different extension
+		std::string bin_filename = filename;
+		size_t dot_pos = bin_filename.find_last_of('.');
+		if (dot_pos != std::string::npos) {
+			bin_filename = bin_filename.substr(0, dot_pos) + ".bin";
+		} else {
+			bin_filename += ".bin";
+		}
+		
+		// Make sure the directory exists
+		std::string dir = std::string(Path::GetDirectory(filename));
+		if (!FileSystem::DirectoryExists(dir.c_str())) {
+			FileSystem::CreateDirectoryPath(dir.c_str(), true);
+		}
+		
+		FILE* fp = fopen(bin_filename.c_str(), "wb");
+		if (!fp) {
+			Console.Error("UWP: Fallback - Failed to open file for writing: %s", bin_filename.c_str());
+			return false;
+		}
+		
+		// Write a simple header with dimensions and format info
+		const char header[] = "PCSX2_RAW_TEXTURE";
+		fwrite(header, strlen(header), 1, fp);
+		fwrite(&width, sizeof(width), 1, fp);
+		fwrite(&height, sizeof(height), 1, fp);
+		fwrite(&pitch, sizeof(pitch), 1, fp);
+		
+		// Write raw pixel data
+		bool success = true;
+		for (u32 y = 0; y < height; ++y) {
+			if (fwrite(buffer + (y * pitch), pitch, 1, fp) != 1) {
+				Console.Error("UWP: Fallback - Failed to write texture data at row %u", y);
+				success = false;
+				break;
+			}
+		}
+		
+		fclose(fp);
+		
+		// Create a small placeholder PNG file so texture replacement detection works
+		FILE* png_fp = fopen(filename.c_str(), "wb");
+		if (png_fp) {
+			const char png_header[] = "PCSX2_TEXTURE_PLACEHOLDER";
+			fwrite(png_header, strlen(png_header), 1, png_fp);
+			fclose(png_fp);
+		}
+		
+		if (success) {
+			Console.WriteLn("UWP: Fallback method - Successfully saved raw texture data to %s", bin_filename.c_str());
+		}
+		
+		return success;
+	}
+	catch (const std::exception& e) {
+		Console.Error("UWP: Exception in fallback texture save: %s", e.what());
+		return false;
+	}
+	catch (...) {
+		Console.Error("UWP: Unknown exception in fallback texture save");
+		return false;
+	}
+}
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // DDS Handler

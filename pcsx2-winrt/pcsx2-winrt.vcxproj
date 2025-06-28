@@ -303,12 +303,24 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release Clang|x64'">true</DeploymentContent>
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug Clang|x64'">true</DeploymentContent>
     </None>
-    <None Include="resources\icons\star-0.svg" />
-    <None Include="resources\icons\star-1.svg" />
-    <None Include="resources\icons\star-2.svg" />
-    <None Include="resources\icons\star-3.svg" />
-    <None Include="resources\icons\star-4.svg" />
-    <None Include="resources\icons\star-5.svg" />
+    <None Include="resources\icons\star-0.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="resources\icons\star-1.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="resources\icons\star-2.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="resources\icons\star-3.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="resources\icons\star-4.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
+    <None Include="resources\icons\star-5.svg">
+      <DeploymentContent>true</DeploymentContent>
+    </None>
     <None Include="resources\patches.zip">
       <DeploymentContent>true</DeploymentContent>
     </None>
@@ -400,15 +412,18 @@
     <None Include="resources\shaders\dx11\tfx.fx">
       <DeploymentContent>true</DeploymentContent>
     </None>
-    <None Include="resources\sounds\achievements\lbsubmit.wav">
+    <Media Include="resources\sounds\achievements\lbsubmit.wav">
       <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\sounds\achievements\message.wav">
+      <FileType>Document</FileType>
+    </Media>
+    <Media Include="resources\sounds\achievements\message.wav">
       <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\sounds\achievements\unlock.wav">
+      <FileType>Document</FileType>
+    </Media>
+    <Media Include="resources\sounds\achievements\unlock.wav">
       <DeploymentContent>true</DeploymentContent>
-    </None>
+      <FileType>Document</FileType>
+    </Media>
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(SolutionDir)\uwp-deps\bin\*.dll">

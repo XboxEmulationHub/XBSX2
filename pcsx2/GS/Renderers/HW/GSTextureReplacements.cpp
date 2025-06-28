@@ -18,6 +18,10 @@
 #include "GS/Renderers/HW/GSTextureReplacements.h"
 #include "VMManager.h"
 
+#if defined(WINRT_XBOX)
+#include "pcsx2-winrt/UWPUtils.h"
+#endif
+
 #include <cinttypes>
 #include <condition_variable>
 #include <cstring>
@@ -283,6 +287,15 @@ std::string GSTextureReplacements::GetDumpFilename(const TextureName& name, u32 
 			// if it fails to create, we're not going to be able to use it anyway
 			return ret;
 		}
+
+#if defined(WINRT_XBOX)
+		// For UWP, we need to verify we have write access to the directory
+		if (!UWP::EnsureDirectoryWriteAccess(game_subdir))
+		{
+			Console.Error("Failed to get write access to texture dump directory: %s", game_subdir.c_str());
+			return ret;
+		}
+#endif
 	}
 
 	std::string filename;

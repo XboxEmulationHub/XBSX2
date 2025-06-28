@@ -8735,7 +8735,7 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 
 		const float icon_height = LayoutScale(24.0f);
 		const float icon_width = icon_height * (500.0f / 275.0f);
-		GSTexture* ra_icon = GetCachedSvgTextureAsync("icons/ra-icon.svg", ImVec2(icon_width, icon_height));
+		GSTexture* ra_icon = GetCachedSvgTextureAsync("icons/ralogo.svg", ImVec2(icon_width, icon_height));
 		const float title_width = ImGui::CalcTextSize("RetroAchievements").x;
 		const float header_width = (ra_icon ? icon_width + LayoutScale(10.0f) : 0.0f) + title_width;
 		const float header_start = (content_width - header_width) * 0.5f;

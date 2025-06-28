@@ -213,7 +213,7 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 #ifndef WINRT_XBOX
 	MapController(si, 0, InputManager::GetGenericBindingMapping("Keyboard"));
 #else
-	MapController(si, 0, InputManager::GetGenericBindingMapping("XInput-0"));
+	MapController(si, 0, InputManager::GetGenericBindingMapping("XInput Controller 0"));
 #endif
 }
 
@@ -257,7 +257,7 @@ void Pad::SetDefaultHotkeyConfig(SettingsInterface& si)
 	//	si.SetStringValue("Hotkeys", "IncreaseSpeed", "Keyboard"); TBD
 	//  si.SetStringValue("Hotkeys", "ResetVM", "Keyboard"); TBD
 	//  si.SetStringValue("Hotkeys", "ShutdownVM", "Keyboard"); TBD
-	si.SetStringValue("Hotkeys", "OpenPauseMenu", "Keyboard/Escape");
+	si.SetStringValue("Hotkeys", "OpenPauseMenu", "Xinput-0 Left Stick + Xinput-0 Right Stick");
 	si.SetStringValue("Hotkeys", "ToggleFrameLimit", "Keyboard/F4");
 	si.SetStringValue("Hotkeys", "TogglePause", "Keyboard/Space");
 	si.SetStringValue("Hotkeys", "ToggleSlowMotion", "Keyboard/Shift & Keyboard/Backtab");

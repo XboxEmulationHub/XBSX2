@@ -1393,8 +1393,16 @@ void FullscreenUI::DrawLandingWindow()
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
-		ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
-		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const float left_margin = LayoutScale(10.0f);
+		const float bottom_margin = LayoutScale(10.0f);
+		const float y_pos = ImGui::GetWindowSize().y - ImGui::GetTextLineHeightWithSpacing() - bottom_margin;
+		ImGui::SetCursorPos(ImVec2(left_margin, y_pos));
+		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
+		ImGui::PushTextWrapPos(ImGui::GetWindowSize().x - left_margin);
+		ImGui::TextWrapped("%s", info_text);
+		ImGui::PopTextWrapPos();
+		ImGui::PopFont();
 	}
 	ImGui::PopStyleColor();
 

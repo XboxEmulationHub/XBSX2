@@ -500,6 +500,7 @@ namespace FullscreenUI
 	static void DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_advanced_settings);
 	static void DrawAudioSettingsPage();
 	static void DrawMemoryCardSettingsPage();
+	static void DrawNetworkHDDSettingsPage();
 	static void DrawFoldersSettingsPage();
 	static void DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& settings_lock);
 	static void DrawControllerSettingsPage();
@@ -1990,8 +1991,16 @@ void FullscreenUI::DrawLandingWindow()
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
-		ImGui::SetCursorPos(ImVec2(10, ImGui::GetWindowSize().y - 30));
-		ImGui::Text("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const float left_margin = LayoutScale(10.0f);
+		const float bottom_margin = LayoutScale(10.0f);
+		const float y_pos = ImGui::GetWindowSize().y - ImGui::GetTextLineHeightWithSpacing() - bottom_margin;
+		ImGui::SetCursorPos(ImVec2(left_margin, y_pos));
+		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
+		ImGui::PushTextWrapPos(ImGui::GetWindowSize().x - left_margin);
+		ImGui::TextWrapped("%s", info_text);
+		ImGui::PopTextWrapPos();
+		ImGui::PopFont();
 	}
 	ImGui::PopStyleColor();
 
@@ -3862,6 +3871,10 @@ void FullscreenUI::DrawSettingsWindow()
 				DrawMemoryCardSettingsPage();
 				break;
 
+			case SettingsPage::NetworkHDD:
+				DrawNetworkHDDSettingsPage();
+				break;
+
 			case SettingsPage::Folders:
 				DrawFoldersSettingsPage();
 				break;
@@ -4074,7 +4087,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 		FSUI_CSTR("Selects the color style to be used for Big Picture Mode."),
 		"UI", "FullscreenUITheme", "Dark", s_theme_name, s_theme_value, std::size(s_theme_name), true);
 	DrawToggleSetting(
-	bsi, FSUI_ICONSTR(ICON_FA_LIST, "Default To Game List"), FSUI_CSTR("When Big Picture mode is started, the game list will be displayed instead of the main menu."), "UI", "FullscreenUIDefaultToGameList", false);
+		bsi, FSUI_ICONSTR(ICON_FA_LIST, "Default To Game List"), FSUI_CSTR("When Big Picture mode is started, the game list will be displayed instead of the main menu."), "UI", "FullscreenUIDefaultToGameList", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CIRCLE_INFO, "Use Save State Selector"),
 		FSUI_CSTR("Show a save state selector UI when switching slots instead of showing a notification bubble."),
 		"EmuCore", "UseSavestateSelector", true);
@@ -5359,7 +5372,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 			std::vector<AdapterEntry> pcap_switched_adapters;
 			std::set<std::string> seen_bridged_guids;
 			std::set<std::string> seen_switched_guids;
-
 			for (const auto& adapter : pcap_adapters)
 			{
 				if (adapter.type == Pcsx2Config::DEV9Options::NetApi::PCAP_Bridged)
@@ -5392,7 +5404,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 				api_types.emplace_back(Pcsx2Config::DEV9Options::NetApi::PCAP_Bridged);
 				api_display_names.emplace_back("PCAP Bridged");
 			}
-
 			if (!pcap_switched_adapters.empty())
 			{
 				adapter_lists.emplace_back(pcap_switched_adapters);
@@ -5446,7 +5457,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 			network_enabled))
 	{
 		ImGuiFullscreen::ChoiceDialogOptions options;
-
 		for (size_t i = 0; i < api_display_names.size(); i++)
 		{
 			options.emplace_back(api_display_names[i], i == current_api_index);
@@ -5564,7 +5574,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 				if (index < static_cast<s32>(current_adapter_list.size()))
 				{
 					const auto& selected_adapter = current_adapter_list[index];
-
 					auto lock = Host::GetSettingsLock();
 					bsi->SetStringValue("DEV9/Eth", "EthApi", current_api_choice.c_str());
 					bsi->SetStringValue("DEV9/Eth", "EthDevice", selected_adapter.guid.c_str());
@@ -5668,7 +5677,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 		{
 			const std::string full_path = fd.FileName;
 			const std::string filename = std::string(Path::GetFileName(full_path));
-
 			// Get file size and determine LBA mode
 			const s64 file_size = FileSystem::GetPathFileSize(full_path.c_str());
 			if (file_size > 0)
@@ -5697,7 +5705,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 				if (values[index] == "__browse__")
 				{
 					CloseChoiceDialog();
-
 					OpenFileSelector(FSUI_ICONSTR(ICON_FA_HARD_DRIVE, "Select HDD Image File"), false,
 						[game_settings](const std::string& path) {
 							if (path.empty())
@@ -5713,7 +5720,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 				else if (values[index] == "__create__")
 				{
 					CloseChoiceDialog();
-
 					std::vector<std::pair<std::string, int>> size_options = {
 						{"40 GB (Recommended)", 40},
 						{"80 GB", 80},
@@ -5747,7 +5753,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 									[game_settings](std::string input) {
 										if (input.empty())
 											return;
-
 										std::optional<int> custom_size_opt = StringUtil::FromChars<int>(input);
 										if (!custom_size_opt.has_value())
 										{
@@ -5755,7 +5760,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 											return;
 										}
 										int custom_size_gb = custom_size_opt.value();
-
 										if (custom_size_gb < 40 || custom_size_gb > 2000)
 										{
 											ShowToast(std::string(), FSUI_STR("HDD size must be between 40 GB and 2000 GB."));
@@ -5826,7 +5830,6 @@ void FullscreenUI::DrawNetworkHDDSettingsPage()
 								SetSettingsChanged(bsi);
 								FullscreenUI::CreateHardDriveWithProgress(filepath, size_gb, lba48);
 							}
-
 							CloseChoiceDialog();
 						});
 				}

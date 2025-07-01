@@ -14,6 +14,7 @@
 #define UNICODE
 #define _UNICODE
 #define _M_X86
+#define _AMD64_
 #endif
 
 #include "common/Pcsx2Defs.h"

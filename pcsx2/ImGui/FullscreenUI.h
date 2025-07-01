@@ -21,6 +21,8 @@ namespace Achievements
 
 namespace FullscreenUI
 {
+	class HddCreateInProgress;
+
 	bool Initialize();
 	bool IsInitialized();
 	void ReloadSvgResources();

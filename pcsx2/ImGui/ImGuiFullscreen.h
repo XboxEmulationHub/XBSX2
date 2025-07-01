@@ -273,7 +273,7 @@ namespace ImGuiFullscreen
 	using FileSelectorFilters = std::vector<std::string>;
 	bool IsFileSelectorOpen();
 	void OpenFileSelector(std::string_view title, bool select_directory, FileSelectorCallback callback,
-		FileSelectorFilters filters = FileSelectorFilters(), std::string initial_directory = std::string());
+		FileSelectorFilters filters = FileSelectorFilters(), std::string initial_directory = std::string(), std::string default_filename = std::string());
 	void CloseFileSelector();
 
 	using ChoiceDialogCallback = std::function<void(s32 index, const std::string& title, bool checked)>;

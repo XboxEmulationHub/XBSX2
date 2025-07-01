@@ -2364,7 +2364,7 @@ bool ImGuiFullscreen::IsFileSelectorOpen()
 }
 
 void ImGuiFullscreen::OpenFileSelector(std::string_view title, bool select_directory, FileSelectorCallback callback,
-	FileSelectorFilters filters, std::string initial_directory)
+	FileSelectorFilters filters, std::string initial_directory, std::string default_filename)
 {
 	if (initial_directory.empty() || !FileSystem::DirectoryExists(initial_directory.c_str()))
 		initial_directory = FileSystem::GetWorkingDirectory();

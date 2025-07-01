@@ -55,7 +55,6 @@
 
 #include "3rdparty/imgui/include/imgui.h"
 
-
 using namespace winrt;
 
 using namespace Windows;
@@ -175,25 +174,12 @@ void Host::SetMouseMode(bool relative, bool hide_cursor)
 {
 }
 
-void Host::ReportInfoAsync(const std::string_view title, const std::string_view message)
-{
-	if (!title.empty() && !message.empty())
-	{
-		Console.Error(
-			"ReportInfoAsync: %.*s: %.*s", static_cast<int>(title.size()), title.data(), static_cast<int>(message.size()), message.data());
-	}
-	else if (!message.empty())
-	{
-		Console.Error("ReportInfoAsync: %.*s", static_cast<int>(message.size()), message.data());
-	}
-}
-
 void Host::ReportErrorAsync(const std::string_view title, const std::string_view message)
 {
-	if (!title.empty() && !message.empty())
-		ERROR_LOG("ReportErrorAsync: {}: {}", title, message);
-	else if (!message.empty())
-		ERROR_LOG("ReportErrorAsync: {}", message);
+}
+
+void Host::ReportInfoAsync(const std::string_view title, const std::string_view message)
+{
 }
 
 bool Host::ConfirmMessage(const std::string_view title, const std::string_view message)

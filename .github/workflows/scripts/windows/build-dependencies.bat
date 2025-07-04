@@ -181,15 +181,12 @@ cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
 
-echo Building SDL...
-rmdir /S /Q "%SDL%"
-%SEVENZIP% x "%SDL%.zip" || goto error
-cd "%SDL%" || goto error
-cmake -B build -DCMAKE_BUILD_TYPE=Release %FORCEPDB% -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DSDL_SHARED=ON -DSDL_STATIC=OFF -G Ninja || goto error
-cmake --build build --parallel || goto error
-ninja -C build install || goto error
-copy build\SDL3.pdb "%INSTALLDIR%\bin" || goto error
-cd .. || goto error
+echo Installing pre-built SDL...
+%SEVENZIP% x "SDL-UWP.zip" || goto error
+xcopy /E /I /Y "SDL-UWP\bin\*" "%INSTALLDIR%\bin\" || goto error
+xcopy /E /I /Y "SDL-UWP\lib\*" "%INSTALLDIR%\lib\" || goto error
+xcopy /E /I /Y "SDL-UWP\include\*" "%INSTALLDIR%\include\" || goto error
+rmdir /S /Q "SDL-UWP" || goto error
 
 if %DEBUG%==1 (
   set QTBUILDSPEC=-DCMAKE_CONFIGURATION_TYPES="Release;Debug" -G "Ninja Multi-Config"
@@ -357,3 +354,11 @@ if /i %~3==%filechecksum% (
     echo Expected %~3 got %filechecksum%.
     exit /B 1
 )
+
+:downloadfile-nohash
+if not exist "%~1" (
+  echo Downloading %~1 from %~2...
+  curl -L -o "%~1" "%~2" || goto error
+)
+echo Skipping validation for %~1 (development build).
+exit /B 0

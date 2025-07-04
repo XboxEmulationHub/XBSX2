@@ -21,7 +21,11 @@ void InputRecordingFile::InputRecordingFileHeader::init() noexcept
 
 void InputRecordingFile::setEmulatorVersion()
 {
+#ifdef UWP_APP_VERSION
+	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "PCSX2-%s", UWP_APP_VERSION);
+#else
 	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "PCSX2-%s", BuildVersion::GitRev);
+#endif
 }
 
 void InputRecordingFile::setAuthor(const std::string& _author)

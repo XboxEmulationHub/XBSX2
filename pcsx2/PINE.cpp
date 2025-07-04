@@ -631,12 +631,17 @@ PINEServer::IPCBuffer PINEServer::ParseCommand(std::span<u8> buf, std::vector<u8
 			{
 				if (!VMManager::HasValidVM())
 					goto error;
-				u32 size = strlen(BuildVersion::GitRev) + 7;
-				if (!SafetyChecks(buf_cnt, 0, ret_cnt, size + 4, buf_size)) [[unlikely]]
-					goto error;
-				ToResultVector(ret_buffer, size, ret_cnt);
-				ret_cnt += 4;
-				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
+				u32 size = 0;
+				if (UWP_APP_VERSION)
+				{
+					size = strlen(UWP_APP_VERSION) + 7;
+					snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", UWP_APP_VERSION);
+				}
+				else
+				{
+					size = strlen(BuildVersion::GitRev) + 7;
+					snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
+				}
 				ret_cnt += size;
 				break;
 			}

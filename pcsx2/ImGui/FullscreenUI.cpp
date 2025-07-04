@@ -1269,9 +1269,6 @@ void FullscreenUI::Render()
 	if (s_achievements_login_open)
 		DrawAchievementsLoginWindow();
 
-	if (s_achievements_login_open)
-		DrawAchievementsLoginWindow();
-
 	if (s_input_binding_type != InputBindingInfo::Type::Unknown)
 		DrawInputBindingWindow();
 

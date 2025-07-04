@@ -21,7 +21,11 @@ void InputRecordingFile::InputRecordingFileHeader::init() noexcept
 
 void InputRecordingFile::setEmulatorVersion()
 {
+#if !defined(WINRT_XBOX)
 	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "PCSX2-%s", BuildVersion::GitRev);
+#else
+	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "XBSX2-%s", BuildVersion::GitRev);
+#endif
 }
 
 void InputRecordingFile::setAuthor(const std::string& _author)

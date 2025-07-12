@@ -741,11 +741,19 @@ void SDLInputSource::SetHints()
 
 bool SDLInputSource::InitializeSubsystem()
 {
+#if !defined(WINRT_XBOX)
 	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC))
 	{
 		Console.Error("SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC) failed");
 		return false;
 	}
+#else
+	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD))
+	{
+		Console.Error("SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD) failed");
+		return false;
+	}
+#endif
 
 	SDL_SetLogOutputFunction(SDLLogCallback, nullptr);
 #ifdef PCSX2_DEVBUILD

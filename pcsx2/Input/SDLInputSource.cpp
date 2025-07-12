@@ -636,9 +636,9 @@ void SDLInputSource::SetHints()
 
 bool SDLInputSource::InitializeSubsystem()
 {
-	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC))
+	if (!SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD))
 	{
-		Console.Error("SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC) failed");
+		Console.Error("SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD) failed: %s", SDL_GetError());
 		return false;
 	}
 
@@ -672,7 +672,7 @@ void SDLInputSource::ShutdownSubsystem()
 
 	if (m_sdl_subsystem_initialized)
 	{
-		SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_HAPTIC);
+		SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD);
 		m_sdl_subsystem_initialized = false;
 	}
 }

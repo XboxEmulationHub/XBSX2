@@ -710,7 +710,6 @@ bool InputManager::GetInputSourceDefaultEnabled(InputSourceType type)
 #if !WINRT_XBOX
 		case InputSourceType::Keyboard:
 		case InputSourceType::Pointer:
-		case InputSourceType::SDL:
 			return true;
 #endif
 #ifdef _WIN32
@@ -718,6 +717,7 @@ bool InputManager::GetInputSourceDefaultEnabled(InputSourceType type)
 		case InputSourceType::DInput:
 			return false;
 #endif
+		case InputSourceType::SDL:
 		case InputSourceType::XInput:
 			return true;
 #endif

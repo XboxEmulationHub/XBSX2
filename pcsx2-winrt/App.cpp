@@ -15,6 +15,10 @@
 #include <winrt/Windows.System.h>
 #include <gamingdeviceinformation.h>
 
+#define SDL_MAIN_HANDLED
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
@@ -91,7 +95,7 @@ bool WinRTHost::InitializeConfig()
 	if (!EmuFolders::SetResourcesDirectory() || !EmuFolders::SetDataDirectory(nullptr))
 		return false;
 
-	ImGuiManager::SetFontPathAndRange(Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf"), {});
+	ImGuiManager::SetFontPath(Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf"));
 
 	const std::string path(Path::Combine(EmuFolders::Settings, "PCSX2.ini"));
 	Console.WriteLn("Loading config from %s.", path.c_str());
@@ -720,6 +724,8 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
+	SDL_SetMainReady();
+
 	winrt::init_apartment();
 
 	CoreApplication::Run(make<App>());

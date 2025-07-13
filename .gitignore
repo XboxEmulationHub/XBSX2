@@ -133,7 +133,6 @@ CMakeSettings.json
 
 # UWP/Xbox specific ignores
 /pcsx2-winrt/readme.txt
-/pcsx2-winrt/pcsx2-winrt_TemporaryKey.pfx
 /pcsx2-winrt/pcsx2-winrt.vcxproj.filters
 /pcsx2-winrt/resources
 /pcsx2-winrt/Generated Files/winrt

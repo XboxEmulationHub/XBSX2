@@ -4075,6 +4075,7 @@ TRANSLATE_NOOP("FullscreenUI", "Settings");
 TRANSLATE_NOOP("FullscreenUI", "Changes settings for the application.");
 TRANSLATE_NOOP("FullscreenUI", "Exit");
 TRANSLATE_NOOP("FullscreenUI", "Exit the application and return to Dev Home.");
+TRANSLATE_NOOP("FullscreenUI", "XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
 TRANSLATE_NOOP("FullscreenUI", "Start File");
 TRANSLATE_NOOP("FullscreenUI", "Launch a game by selecting a file/disc image.");
 TRANSLATE_NOOP("FullscreenUI", "Start Disc");

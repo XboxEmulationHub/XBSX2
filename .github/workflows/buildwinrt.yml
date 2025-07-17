@@ -43,7 +43,7 @@ jobs:
       shell: cmd
       run: |
         cd bin/resources
-        aria2c -Z "https://github.com/PCSX2/pcsx2_patches/releases/tag/latest/download/patches.zip"
+        aria2c -Z "https://github.com/PCSX2/pcsx2_patches/releases/download/latest/patches.zip"
 
     - name: Download Dependencies
       shell: cmd

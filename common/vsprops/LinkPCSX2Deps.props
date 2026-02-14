@@ -5,8 +5,9 @@
     <Link>
       <AdditionalLibraryDirectories>$(DepsLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>%(AdditionalDependencies);freetype.lib;jpeg.lib;libpng16.lib;libwebp.lib;lz4.lib;SDL3.lib;z.lib;zstd.lib;plutovg.lib;plutosvg.lib;ryml.lib</AdditionalDependencies>
-      <AdditionalDependencies Condition="$(Configuration.Contains(Debug))">%(AdditionalDependencies);kddockwidgets-qt6d.lib;</AdditionalDependencies>
+    <!--  <AdditionalDependencies Condition="$(Configuration.Contains(Debug))">%(AdditionalDependencies);kddockwidgets-qt6d.lib;</AdditionalDependencies>
       <AdditionalDependencies Condition="!$(Configuration.Contains(Debug))">%(AdditionalDependencies);kddockwidgets-qt6.lib;</AdditionalDependencies>
+    -->
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -23,8 +24,9 @@
     <DepsDLLs Include="$(DepsBinDir)shaderc_shared.dll" />
     <DepsDLLs Include="$(DepsBinDir)z.dll" />
     <DepsDLLs Include="$(DepsBinDir)zstd.dll" />
-    <DepsDLLs Condition="$(Configuration.Contains(Debug))" Include="$(DepsBinDir)kddockwidgets-qt6d.dll" />
+   <!-- <DepsDLLs Condition="$(Configuration.Contains(Debug))" Include="$(DepsBinDir)kddockwidgets-qt6d.dll" />
     <DepsDLLs Condition="!$(Configuration.Contains(Debug))" Include="$(DepsBinDir)kddockwidgets-qt6.dll" />
+    -->
     <DepsDLLs Include="$(DepsBinDir)plutovg.dll" />
     <DepsDLLs Include="$(DepsBinDir)plutosvg.dll" />
     <DepsDLLs Include="$(DepsBinDir)ryml.dll" />

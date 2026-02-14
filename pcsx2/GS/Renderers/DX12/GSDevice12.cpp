@@ -1163,7 +1163,7 @@ bool GSDevice12::CreateSwapChain()
 		Console.ErrorFmt("D3D12: GetParent() on swap chain to get factory failed: {}", Error::CreateHResult(hr).GetDescription());
 	}
 #else
-	Console.WriteLn("Creating a %dx%d winrt swap chain", swap_chain_desc.Width, swap_chain_desc.Height);
+	Console.WriteLn("D3D12: Creating a %dx%d WinRT swap chain", swap_chain_desc.Width, swap_chain_desc.Height);
 	hr = m_dxgi_factory->CreateSwapChainForCoreWindow(
 		m_command_queue.get(), static_cast<::IUnknown*>(m_window_info.surface_handle), &swap_chain_desc, nullptr, m_swap_chain.put());
 #endif

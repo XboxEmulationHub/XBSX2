@@ -32,6 +32,7 @@
 
 #include "common/Assertions.h"
 #include "common/Console.h"
+#include "common/CrashHandler.h"
 #include "common/FileSystem.h"
 #include "common/MemorySettingsInterface.h"
 #include "common/Path.h"
@@ -51,7 +52,9 @@
 #include "pcsx2/VMManager.h"
 
 #include "pcsx2/ImGui/FullscreenUI.h"
+#include "pcsx2/ImGui/ImGuiFullscreen.h"
 #include "pcsx2/GameList.h"
+#include "IconsFontAwesome6.h"
 
 #ifdef ENABLE_ACHIEVEMENTS
 #include "pcsx2/Achievements.h"
@@ -72,6 +75,7 @@ using namespace Windows::UI::Composition;
 static winrt::Windows::UI::Core::CoreWindow* s_corewind = NULL;
 static std::mutex m_event_mutex;
 static std::deque<std::function<void()>> m_event_queue;
+static std::thread::id s_cpu_thread_id;
 static bool s_running = true;
 static std::thread s_gamescanner_thread;
 std::atomic<bool> b_gamescan_active = false;
@@ -85,15 +89,17 @@ namespace WinRTHost
 } // namespace WinRTHost
 
 static std::unique_ptr<INISettingsInterface> s_settings_interface;
+static std::unique_ptr<INISettingsInterface> s_secrets_settings_interface;
 
 BEGIN_HOTKEY_LIST(g_host_hotkeys)
 END_HOTKEY_LIST()
 
 bool WinRTHost::InitializeConfig()
 {
-	// Taken from gsrunner
 	if (!EmuFolders::SetResourcesDirectory() || !EmuFolders::SetDataDirectory(nullptr))
 		return false;
+
+	CrashHandler::SetWriteDirectory(EmuFolders::DataRoot);
 
 	ImGuiManager::SetFontPath(Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf"));
 
@@ -107,24 +113,21 @@ bool WinRTHost::InitializeConfig()
 		VMManager::SetDefaultSettings(*s_settings_interface, true, true, true, true, true);
 
 		// Enable vsync
-		//s_settings_interface->SetBoolValue("EmuCore/GS", "FrameLimitEnable", false);
-		s_settings_interface->SetIntValue("EmuCore/GS", "VsyncEnable", true);
-
+		// s_settings_interface->SetBoolValue("EmuCore/GS", "FrameLimitEnable", false);
+		s_settings_interface->SetIntValue("EmuCore/GS", "VsyncEnable", 1);
 
 		auto lock = Host::GetSettingsLock();
 		if (!s_settings_interface->Save())
 			Console.Error("Failed to save settings.");
 	}
 
+	const std::string secrets_path(Path::Combine(EmuFolders::Settings, "secrets.ini"));
+	s_secrets_settings_interface = std::make_unique<INISettingsInterface>(secrets_path);
+	s_secrets_settings_interface->Load();
+	Host::Internal::SetSecretsSettingsLayer(s_secrets_settings_interface.get());
+
 	VMManager::Internal::LoadStartupSettings();
 	return true;
-}
-
-void Host::CommitBaseSettingChanges()
-{
-	auto lock = Host::GetSettingsLock();
-	if (!s_settings_interface->Save())
-		Console.Error("Failed to save settings.");
 }
 
 void Host::LoadSettings(SettingsInterface& si, std::unique_lock<std::mutex>& lock)
@@ -133,112 +136,6 @@ void Host::LoadSettings(SettingsInterface& si, std::unique_lock<std::mutex>& loc
 
 void Host::CheckForSettingsChanges(const Pcsx2Config& old_config)
 {
-}
-
-bool Host::RequestResetSettings(bool folders, bool core, bool controllers, bool hotkeys, bool ui)
-{
-	{
-		auto lock = Host::GetSettingsLock();
-		VMManager::SetDefaultSettings(*s_settings_interface.get(), folders, core, controllers, hotkeys, ui);
-	}
-
-	Host::CommitBaseSettingChanges();
-
-	return true;
-}
-
-void Host::SetDefaultUISettings(SettingsInterface& si)
-{
-	// nothing
-}
-
-void Host::OnAchievementsHardcoreModeChanged(bool enabled)
-{
-}
-
-
-void Host::OnAchievementsLoginRequested(Achievements::LoginRequestReason reason)
-{
-	Host::RunOnCPUThread([reason]() {
-		VMManager::SetPaused(true);
-		FullscreenUI::SetAchievementsLoginReason(reason);
-		FullscreenUI::DrawAchievementsLoginWindow();
-	});
-} 
-
-void Host::OnAchievementsLoginSuccess(char const* display_name, u32 points, u32 sc_points, u32 unread_msg)
-{
-}
-
-void Host::OnCoverDownloaderOpenRequested()
-{
-}
-
-void Host::SetMouseMode(bool relative, bool hide_cursor)
-{
-}
-
-void Host::ReportErrorAsync(const std::string_view title, const std::string_view message)
-{
-}
-
-void Host::ReportInfoAsync(const std::string_view title, const std::string_view message)
-{
-}
-
-bool Host::ConfirmMessage(const std::string_view title, const std::string_view message)
-{
-	if (!title.empty() && !message.empty())
-	{
-		Console.Error(
-			"ConfirmMessage: %.*s: %.*s", static_cast<int>(title.size()), title.data(), static_cast<int>(message.size()), message.data());
-	}
-	else if (!message.empty())
-	{
-		Console.Error("ConfirmMessage: %.*s", static_cast<int>(message.size()), message.data());
-	}
-
-	return true;
-}
-
-void Host::OpenURL(const std::string_view url)
-{
-	winrt::Windows::Foundation::Uri m_uri{winrt::to_hstring(url)};
-	auto asyncOperation = winrt::Windows::System::Launcher::LaunchUriAsync(m_uri);
-	asyncOperation.Completed([](winrt::Windows::Foundation::IAsyncOperation<bool> const& sender,
-								 winrt::Windows::Foundation::AsyncStatus const asyncStatus) {
-		return;
-	});
-}
-
-bool Host::CopyTextToClipboard(const std::string_view text)
-{
-	return false;
-}
-
-void Host::BeginTextInput()
-{
-	winrt::Windows::UI::ViewManagement::Core::CoreInputView::GetForCurrentView().TryShowPrimaryView();
-}
-
-void Host::EndTextInput()
-{
-	winrt::Windows::UI::ViewManagement::Core::CoreInputView::GetForCurrentView().TryHide();
-}
-
-std::optional<WindowInfo> Host::GetTopLevelWindowInfo()
-{
-	return WinRTHost::GetPlatformWindowInfo();
-}
-
-void Host::OnInputDeviceConnected(const std::string_view identifier, const std::string_view device_name)
-{
-	Host::AddKeyedOSDMessage(fmt::format("{} connected.", identifier), fmt::format("{} connected.", identifier), 5.0f);
-}
-
-void Host::OnInputDeviceDisconnected(InputBindingKey key, const std::string_view identifier)
-{
-	Host::AddKeyedOSDMessage(fmt::format("{} connected.", identifier), fmt::format("{} disconnected.", identifier), 5.0f);
 }
 
 std::optional<WindowInfo> Host::AcquireRenderWindow(bool recreate_window)
@@ -252,7 +149,7 @@ void Host::ReleaseRenderWindow()
 
 void Host::BeginPresentFrame()
 {
-	VMManager::Internal::VSyncOnCPUThread;
+	VMManager::Internal::VSyncOnCPUThread();
 }
 
 void Host::RequestResizeHostDisplay(s32 width, s32 height)
@@ -300,15 +197,90 @@ void Host::OnSaveStateSaved(const std::string_view filename)
 {
 }
 
+void Host::OnAchievementsLoginRequested(Achievements::LoginRequestReason reason)
+{
+	Host::RunOnCPUThread([reason]() {
+		VMManager::SetPaused(true);
+		FullscreenUI::SetAchievementsLoginReason(reason);
+	});
+}
+
+void Host::OnAchievementsLoginSuccess(char const* display_name, u32 points, u32 sc_points, u32 unread_msg)
+{
+	Host::AddOSDMessage(fmt::format("RA: Logged in as {} ({} pts, softcore: {} pts). {} unread messages.",
+							display_name, points, sc_points, unread_msg),
+		Host::OSD_INFO_DURATION);
+}
+
+#ifdef ENABLE_ACHIEVEMENTS
+void Host::OnAchievementsRefreshed()
+{
+}
+#endif
+
+void Host::OnAchievementsHardcoreModeChanged(bool enabled)
+{
+}
+
+void Host::OnCoverDownloaderOpenRequested()
+{
+}
+
+void Host::OnCreateMemoryCardOpenRequested()
+{
+}
+
+bool Host::ShouldPreferHostFileSelector()
+{
+	return false;
+}
+
+void Host::OpenHostFileSelectorAsync(std::string_view title, bool select_directory, FileSelectorCallback callback,
+	FileSelectorFilters filters, std::string_view initial_directory)
+{
+	callback(std::string());
+}
+
+void Host::PumpMessagesOnCPUThread()
+{
+	WinRTHost::ProcessEventQueue();
+}
+
 void Host::RunOnCPUThread(std::function<void()> function, bool block /* = false */)
 {
-	std::unique_lock<std::mutex> lk(m_event_mutex);
-	m_event_queue.push_back(function);
+	if (block && std::this_thread::get_id() == s_cpu_thread_id)
+	{
+		function();
+		return;
+	}
+
+	if (!block)
+	{
+		std::lock_guard<std::mutex> lk(m_event_mutex);
+		m_event_queue.push_back(std::move(function));
+		return;
+	}
+
+	std::condition_variable cv;
+	std::mutex cv_mutex;
+	bool done = false;
+	{
+		std::lock_guard<std::mutex> lk(m_event_mutex);
+		m_event_queue.push_back([fn = std::move(function), &cv, &cv_mutex, &done]() {
+			fn();
+			{
+				std::lock_guard<std::mutex> lk2(cv_mutex);
+				done = true;
+			}
+			cv.notify_one();
+		});
+	}
+	std::unique_lock<std::mutex> lk(cv_mutex);
+	cv.wait(lk, [&done]() { return done; });
 }
 
 void Host::RefreshGameListAsync(bool invalidate_cache)
 {
-	// Could queue up scans but this seems to help prevent crashes
 	if (!b_gamescan_active)
 	{
 		s_gamescanner_thread = std::thread([invalidate_cache]() {
@@ -324,12 +296,24 @@ void Host::CancelGameListRefresh()
 {
 }
 
-bool Host::IsFullscreen()
+void Host::RequestExitApplication(bool allow_confirm)
 {
-	return false;
+	s_running = false;
 }
 
-bool Host::InNoGUIMode() // taken from gsrunner impl
+void Host::RequestExitBigPicture()
+{
+}
+
+void Host::RequestVMShutdown(bool allow_confirm, bool allow_save_state, bool default_save_state)
+{
+	if (!VMManager::HasValidVM())
+		return;
+
+	VMManager::Shutdown(allow_save_state && default_save_state);
+}
+
+bool Host::IsFullscreen()
 {
 	return false;
 }
@@ -346,41 +330,135 @@ void Host::OnCaptureStopped()
 {
 }
 
-void Host::RequestExitApplication(bool allow_confirm)
+void Host::SetDefaultUISettings(SettingsInterface& si)
 {
-	s_running = false;
+}
+
+void Host::CommitBaseSettingChanges()
+{
+	auto lock = Host::GetSettingsLock();
+	if (!s_settings_interface->Save())
+		Console.Error("Failed to save settings.");
+}
+
+bool Host::InBatchMode()
+{
+	return false;
+}
+
+bool Host::InNoGUIMode()
+{
+	return false;
+}
+
+bool Host::RequestResetSettings(bool folders, bool core, bool controllers, bool hotkeys, bool ui)
+{
+	{
+		auto lock = Host::GetSettingsLock();
+		VMManager::SetDefaultSettings(*s_settings_interface.get(), folders, core, controllers, hotkeys, ui);
+	}
+	Host::CommitBaseSettingChanges();
+
+	if (VMManager::HasValidVM())
+		VMManager::ApplySettings();
+	if (folders)
+		VMManager::Internal::UpdateEmuFolders();
+
+	return true;
+}
+
+void Host::ReportInfoAsync(const std::string_view title, const std::string_view message)
+{
+	if (!title.empty() && !message.empty())
+		INFO_LOG("ReportInfoAsync: {}: {}", title, message);
+	else if (!message.empty())
+		INFO_LOG("ReportInfoAsync: {}", message);
+}
+
+void Host::ReportErrorAsync(const std::string_view title, const std::string_view message)
+{
+	if (!title.empty() && !message.empty())
+		ERROR_LOG("ReportErrorAsync: {}: {}", title, message);
+	else if (!message.empty())
+		ERROR_LOG("ReportErrorAsync: {}", message);
+}
+
+void Host::OpenURL(const std::string_view url)
+{
+	winrt::Windows::Foundation::Uri m_uri{winrt::to_hstring(url)};
+	auto asyncOperation = winrt::Windows::System::Launcher::LaunchUriAsync(m_uri);
+	asyncOperation.Completed([](winrt::Windows::Foundation::IAsyncOperation<bool> const& sender,
+								 winrt::Windows::Foundation::AsyncStatus const asyncStatus) {
+		return;
+	});
+}
+
+bool Host::CopyTextToClipboard(const std::string_view text)
+{
+	return false;
+}
+
+void Host::BeginTextInput()
+{
+	winrt::Windows::UI::ViewManagement::Core::CoreInputView::GetForCurrentView().TryShowPrimaryView();
+}
+
+void Host::EndTextInput()
+{
+	winrt::Windows::UI::ViewManagement::Core::CoreInputView::GetForCurrentView().TryHide();
+}
+
+std::optional<WindowInfo> Host::GetTopLevelWindowInfo()
+{
+	return WinRTHost::GetPlatformWindowInfo();
+}
+
+void Host::OnInputDeviceConnected(const std::string_view identifier, const std::string_view device_name)
+{
+	if (VMManager::HasValidVM() || FullscreenUI::HasActiveWindow())
+	{
+		Host::AddIconOSDMessage(fmt::format("controller_connected_{}", identifier), ICON_FA_GAMEPAD,
+			fmt::format("Controller {} connected.", identifier),
+			Host::OSD_INFO_DURATION);
+	}
+}
+
+void Host::OnInputDeviceDisconnected(InputBindingKey key, const std::string_view identifier)
+{
+	if (VMManager::GetState() == VMState::Running &&
+		Host::GetBoolSettingValue("UI", "PauseOnControllerDisconnection", false) &&
+		InputManager::HasAnyBindingsForSource(key))
+	{
+		std::string message = fmt::format("System paused because controller {} was disconnected.", identifier);
+		Host::RunOnCPUThread([message]() { VMManager::SetPaused(true); });
+		Host::AddIconOSDMessage(fmt::format("controller_connected_{}", identifier), ICON_FA_GAMEPAD, std::move(message),
+			Host::OSD_WARNING_DURATION);
+	}
+	else if (VMManager::HasValidVM() || FullscreenUI::HasActiveWindow())
+	{
+		Host::AddIconOSDMessage(fmt::format("controller_connected_{}", identifier), ICON_FA_GAMEPAD,
+			fmt::format("Controller {} disconnected.", identifier),
+			Host::OSD_INFO_DURATION);
+	}
+}
+
+void Host::SetMouseMode(bool relative, bool hide_cursor)
+{
+}
+
+std::unique_ptr<ProgressCallback> Host::CreateHostProgressCallback()
+{
+	return ProgressCallback::CreateNullProgressCallback();
 }
 
 bool Host::LocaleCircleConfirm()
 {
 	using namespace winrt::Windows::Globalization;
-
-	// Get the current input method language tag
 	std::wstring currentLanguage = Language::CurrentInputMethodLanguageTag().c_str();
-
-	// Check if the current language is Japanese, Chinese, or Korean
-	bool isTargetLanguage = currentLanguage.rfind(L"ja", 0) == 0 ||
-							currentLanguage.rfind(L"zh", 0) == 0 ||
-							currentLanguage.rfind(L"ko", 0) == 0;
-
-	return isTargetLanguage;
+	return currentLanguage.rfind(L"ja", 0) == 0 ||
+	       currentLanguage.rfind(L"zh", 0) == 0 ||
+	       currentLanguage.rfind(L"ko", 0) == 0;
 }
-
-void Host::RequestExitBigPicture(void)
-{
-	// No escape bwahaha!
-}
-
-void Host::RequestVMShutdown(bool allow_confirm, bool allow_save_state, bool default_save_state)
-{
-	VMManager::Shutdown(allow_save_state && default_save_state);
-}
-
-#ifdef ENABLE_ACHIEVEMENTS
-void Host::OnAchievementsRefreshed()
-{
-}
-#endif
 
 std::optional<u32> InputManager::ConvertHostKeyboardStringToCode(const std::string_view str)
 {
@@ -433,11 +511,6 @@ std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
 	return wi;
 }
 
-void Host::PumpMessagesOnCPUThread()
-{
-	WinRTHost::ProcessEventQueue();
-}
-
 s32 Host::Internal::GetTranslatedStringImpl(
 	const std::string_view context, const std::string_view msg, char* tbuf, size_t tbuf_space)
 {
@@ -450,13 +523,6 @@ s32 Host::Internal::GetTranslatedStringImpl(
 	return static_cast<s32>(msg.size());
 }
 
-// Taken from gsrunner impl
-std::unique_ptr<ProgressCallback> Host::CreateHostProgressCallback()
-{
-	return ProgressCallback::CreateNullProgressCallback();
-}
-
-// Taken from gsrunner impl
 std::string Host::TranslatePluralToString(const char* context, const char* msg, const char* disambiguation, int count)
 {
 	TinyString count_str = TinyString::from_format("{}", count);
@@ -521,16 +587,14 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 		{
 			WGI::RawGameController::RawGameControllerAdded(
 				[](auto&&, const WGI::RawGameController raw_game_controller) {
-					m_event_queue.push_back([]() {
-						InputManager::ReloadDevices();
-					});
+					std::lock_guard<std::mutex> lk(m_event_mutex);
+					m_event_queue.push_back([]() { InputManager::ReloadDevices(); });
 				});
 
 			WGI::RawGameController::RawGameControllerRemoved(
 				[](auto&&, const WGI::RawGameController raw_game_controller) {
-					m_event_queue.push_back([]() {
-						InputManager::ReloadDevices();
-					});
+					std::lock_guard<std::mutex> lk(m_event_mutex);
+					m_event_queue.push_back([]() { InputManager::ReloadDevices(); });
 				});
 		}
 		catch (winrt::hresult_error)
@@ -595,7 +659,7 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 					return;
 				}
 
-				if (!VMManager::Initialize(std::move(params)))
+				if (VMManager::Initialize(std::move(params)) != VMBootResult::StartupSuccess)
 				{
 					return;
 				}
@@ -618,6 +682,8 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 	void Run()
 	{
+		s_cpu_thread_id = std::this_thread::get_id();
+
 		CoreWindow window = CoreWindow::GetForCurrentThread();
 		window.Activate();
 		s_corewind = &window;

@@ -1,11 +1,11 @@
-name: WinRT SSE4, AVX2 Dev Branch Builds 
+name: XBSX2 SSE4, AVX2 Builds 
 on:
   push:
     branches:
-      - dev
+      - master
   pull_request:
     branches:
-      - dev
+      - master
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
     - name: Extract version string from AppxManifest
       id: extract_version
       run: |
-        $manifest = [xml](Get-Content pcsx2-winrt\Package.appxmanifest)
+        $manifest = [xml](Get-Content pcsx2-uwp\Package.appxmanifest)
         $version = $manifest.Package.Identity.Version
         echo $version
         echo version=$version >> $env:GITHUB_OUTPUT
@@ -44,11 +44,11 @@ jobs:
       run: |
         cd bin/resources
         aria2c -Z "https://github.com/PCSX2/pcsx2_patches/releases/download/latest/patches.zip"
-  
+
     - name: Download Dependencies
       shell: cmd
       run: |
-        aria2c -Z "https://github.com/XboxEmulationHub/xbsx2-dependencies/releases/download/latest-windows-dependencies-dev/xbsx2-dependencies-dev.7z"
+       aria2c -Z "https://github.com/XboxEmulationHub/xbsx2-dependencies/releases/download/latest-windows-dependencies-dev/xbsx2-dependencies-dev.7z"
       
     - name: Extract some files
       run: 7z x xbsx2-dependencies-dev.7z -o"./"
@@ -61,35 +61,35 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: appx-${{ matrix.configuration }}
-        path: AppPackages
+        path: "AppPackages\\xbsx2\\xbsx2_${{ steps.extract_version.outputs.version }}_x64_Test\\xbsx2_${{ steps.extract_version.outputs.version }}_x64.msix"
         
     - name: Upload APPX file (AVX2)
       if: matrix.configuration == 'Release AVX2'
       uses: actions/upload-artifact@v4
       with:
         name: appx-${{ matrix.configuration }}
-        path: AppPackages
+        path: "AppPackages\\xbsx2\\xbsx2_${{ steps.extract_version.outputs.version }}_x64_Release AVX2_Test\\xbsx2_${{ steps.extract_version.outputs.version }}_x64_Release AVX2.msix"
   
-#  Publish-release:
-#    needs: build
-#    name: Publish Release
-#    if: github.ref == 'refs/heads/uwp'
-#    permissions: write-all
-#    runs-on: ubuntu-22.04
+ # Publish-release:
+ #   needs: build
+ #   name: Publish Release
+ #   if: github.ref == 'refs/heads/uwp'
+ #   permissions: write-all
+ #   runs-on: ubuntu-22.04
 
-#    steps:
-#      - name: Download Artifacts
-#        uses: actions/download-artifact@v4.1.7
-#        with:
-#          path: ./artifacts/
+ #   steps:
+ #     - name: Download Artifacts
+ #       uses: actions/download-artifact@v4.1.7
+ #       with:
+ #         path: ./artifacts/
           
-#      - name: Create a new release
-#        uses: marvinpinto/action-automatic-releases@latest
-#        with:
-#          repo_token: ${{ secrets.GITHUB_TOKEN }}
-#         automatic_release_tag: latest
-#          prerelease: false
-#          title: Latest XBSX2 Builds
-#          files: | 
-#            ./artifacts/appx-Release/AppPackages/xbsx2/xbsx2_*_x64_Test/xbsx2_*_x64.msix
-#            ./artifacts/appx-Release\ AVX2/AppPackages/xbsx2/xbsx2_*_x64_Release\ AVX2_Test/xbsx2_*_x64_Release\ AVX2.msix
+ #     - name: Create a new release
+ #       uses: marvinpinto/action-automatic-releases@latest
+ #       with:
+ #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+ #         automatic_release_tag: latest
+ #         prerelease: false
+ #         title: Latest XBSX2 Builds
+ #         files: | 
+ #           ./artifacts/appx-Release/AppPackages/xbsx2/xbsx2_${{ steps.extract_version.outputs.version }}_x64_Test/xbsx2_${{ steps.extract_version.outputs.version }}_x64.appx
+ #           ./artifacts/appx-Release\ AVX2/AppPackages/xbsx2/xbsx2_${{ steps.extract_version.outputs.version }}_x64_Release\ AVX2_Test/xbsx2_${{ steps.extract_version.outputs.version }}_x64_Release\ AVX2.appx

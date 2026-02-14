@@ -5,6 +5,7 @@
 #include "InputRecording.h"
 
 #include "BuildVersion.h"
+#include "ImGui/FullscreenUI.h"
 #include "Utilities/InputRecordingLogger.h"
 
 #include "common/FileSystem.h"
@@ -21,8 +22,8 @@ void InputRecordingFile::InputRecordingFileHeader::init() noexcept
 
 void InputRecordingFile::setEmulatorVersion()
 {
-#ifdef UWP_APP_VERSION
-	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "XBSX2-%s", UWP_APP_VERSION);
+#ifdef WINRT_XBOX
+	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "XBSX2-%s", APP_VERSION);
 #else
 	snprintf(m_header.m_emulatorVersion, sizeof(m_header.m_emulatorVersion), "XBSX2-%s", BuildVersion::GitRev);
 #endif

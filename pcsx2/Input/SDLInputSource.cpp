@@ -1570,14 +1570,32 @@ bool SDLInputSource::GetGenericBindingMapping(const std::string_view device, Inp
 	if (!player_id.has_value() || player_id.value() < 0)
 		return false;
 
-	ControllerDataVector::iterator it = GetControllerDataForPlayerId(player_id.value());
+	const s32 pid = player_id.value();
+	ControllerDataVector::iterator it = GetControllerDataForPlayerId(pid);
 	if (it == m_controllers.end())
-		return false;
+	{
+		for (u32 i = 0; i < std::size(s_sdl_generic_binding_axis_mapping); i++)
+		{
+			const GenericInputBinding negative = s_sdl_generic_binding_axis_mapping[i][0];
+			const GenericInputBinding positive = s_sdl_generic_binding_axis_mapping[i][1];
+			if (negative != GenericInputBinding::Unknown)
+				mapping->emplace_back(negative, fmt::format("SDL-{}/-{}", pid, s_sdl_axis_setting_names[i]));
+			if (positive != GenericInputBinding::Unknown)
+				mapping->emplace_back(positive, fmt::format("SDL-{}/+{}", pid, s_sdl_axis_setting_names[i]));
+		}
+		for (u32 i = 0; i < std::size(s_sdl_generic_binding_button_mapping); i++)
+		{
+			const GenericInputBinding binding = s_sdl_generic_binding_button_mapping[i];
+			if (binding != GenericInputBinding::Unknown)
+				mapping->emplace_back(binding, fmt::format("SDL-{}/{}", pid, s_sdl_button_setting_names[i]));
+		}
+		mapping->emplace_back(GenericInputBinding::SmallMotor, fmt::format("SDL-{}/Haptic", pid));
+		mapping->emplace_back(GenericInputBinding::LargeMotor, fmt::format("SDL-{}/Haptic", pid));
+		return true;
+	}
 
 	if (it->gamepad)
 	{
-		// assume all buttons are present.
-		const s32 pid = player_id.value();
 		for (u32 i = 0; i < std::size(s_sdl_generic_binding_axis_mapping); i++)
 		{
 			const GenericInputBinding negative = s_sdl_generic_binding_axis_mapping[i][0];

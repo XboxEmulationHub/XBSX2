@@ -3,6 +3,7 @@
 
 #include "BuildVersion.h"
 #include "GS.h"
+#include "ImGui/FullscreenUI.h"
 #include "GS/Renderers/HW/GSTextureReplacements.h"
 #include "Host.h"
 #include "LayeredSettingsInterface.h"
@@ -157,8 +158,8 @@ void Host::ReportFormattedErrorAsync(const std::string_view title, const char* f
 
 std::string Host::GetHTTPUserAgent()
 {
-#ifdef UWP_APP_VERSION
-	return fmt::format("XBSX2 {} ({})", UWP_APP_VERSION, GetConsoleModelString());
+#ifdef WINRT_XBOX
+	return fmt::format("XBSX2 {} ({})", APP_VERSION, GetConsoleModelString());
 #else
 	return fmt::format("XBSX2 {} ({})", BuildVersion::GitRev, GetConsoleModelString());
 #endif

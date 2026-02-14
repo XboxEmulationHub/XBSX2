@@ -997,10 +997,10 @@ bool ImGuiManager::ProcessGenericInputEvent(GenericInputBinding key, InputLayout
 		ImGuiKey_GamepadDpadRight, // DPadRight
 		ImGuiKey_GamepadDpadLeft, // DPadLeft
 		ImGuiKey_GamepadDpadDown, // DPadDown
-		ImGuiKey_None, // LeftStickUp
-		ImGuiKey_None, // LeftStickRight
-		ImGuiKey_None, // LeftStickDown
-		ImGuiKey_None, // LeftStickLeft
+		ImGuiKey_GamepadLStickUp, // LeftStickUp
+		ImGuiKey_GamepadLStickRight, // LeftStickRight
+		ImGuiKey_GamepadLStickDown, // LeftStickDown
+		ImGuiKey_GamepadLStickLeft, // LeftStickLeft
 		ImGuiKey_GamepadL3, // L3
 		ImGuiKey_None, // RightStickUp
 		ImGuiKey_None, // RightStickRight

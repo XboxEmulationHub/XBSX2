@@ -80,4 +80,4 @@ namespace Host
 } // namespace Host
 
 // Change this to change the version in the about screen.
-#define APP_VERSION "2.0.8.4"
+#define APP_VERSION "2.0.8.5"

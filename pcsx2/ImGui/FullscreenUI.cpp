@@ -1991,7 +1991,7 @@ void FullscreenUI::DrawLandingWindow()
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
-		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or GitHub for any help with XBSX2 related issues.");
 		const float left_margin = LayoutScale(10.0f);
 		const float bottom_margin = LayoutScale(10.0f);
 		const float y_pos = ImGui::GetWindowSize().y - ImGui::GetTextLineHeightWithSpacing() - bottom_margin;
@@ -4278,7 +4278,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_ARROW_POINTER, "Hide Cursor In Fullscreen"),
 		FSUI_CSTR("Hides the mouse pointer/cursor when the emulator is in fullscreen mode."), "UI", "HideMouseCursor", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_TABLET_SCREEN_BUTTON, "Start Big Picture UI"),
-		FSUI_CSTR("Automatically starts Big Picture Mode instead of the regular Qt interface when PCSX2 launches."), "UI", "StartBigPictureMode", false);
+		FSUI_CSTR("Automatically starts Big Picture Mode instead of the regular Qt interface when XBSX2 launches."), "UI", "StartBigPictureMode", false);
 #endif
 	MenuHeading(FSUI_CSTR("On-Screen Display"));
 	DrawIntSpinBoxSetting(bsi, FSUI_ICONSTR(ICON_FA_MAGNIFYING_GLASS, "OSD Scale"),
@@ -4307,8 +4307,8 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 	DrawStringListSetting(bsi, FSUI_ICONSTR(ICON_FA_CHART_BAR, "OSD Performance Position"),
 		FSUI_CSTR("Determines where performance statistics are positioned."), "EmuCore/GS", "OsdPerformancePos", "3",
 		s_osd_position_options, s_osd_position_values, std::size(s_osd_position_options), true);
-	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CODE_MERGE, "Show PCSX2 Version"),
-		FSUI_CSTR("Shows the current PCSX2 version."), "EmuCore/GS",
+	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CODE_MERGE, "Show XBSX2 Version"),
+		FSUI_CSTR("Shows the current XBSX2 version."), "EmuCore/GS",
 		"OsdShowVersion", false);
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_GAUGE_SIMPLE_HIGH, "Show Speed"),
 		FSUI_CSTR("Shows the current emulation speed of the system as a percentage."), "EmuCore/GS",
@@ -8451,11 +8451,13 @@ void FullscreenUI::DrawGameListSettingsWindow()
 	MenuHeading(FSUI_CSTR("Cover Settings"));
 	{
 		DrawFolderSetting(bsi, FSUI_ICONSTR(ICON_FA_FOLDER, "Covers Directory"), "Folders", "Covers", EmuFolders::Covers);
+#ifndef WINRT_XBOX
 		if (MenuButton(
 				FSUI_ICONSTR(ICON_FA_DOWNLOAD, "Download Covers"), FSUI_CSTR("Downloads covers from a user-specified URL template.")))
 		{
 			Host::OnCoverDownloaderOpenRequested();
 		}
+#endif
 	}
 
 	MenuHeading(FSUI_CSTR("Operations"));
@@ -8669,7 +8671,7 @@ void FullscreenUI::DrawAboutWindow()
 
 		ImGui::TextWrapped("Thank you to SirMangler, and TRW/TheRhysWyrill for porting PCSX2 to UWP.");
 
-		ImGui::TextWrapped("Thank you to Rockso/Redhood/fffathur/EM20080 for help with assets like the App Icon/Banner.");
+		ImGui::TextWrapped("Thank you to Rockso/Redhood/fffathur for help with assets like the App Icon/Banner.");
 
 		ImGui::NewLine();
 
@@ -8700,7 +8702,11 @@ void FullscreenUI::DrawAboutWindow()
 
 		const float alignment = image_size.x + image_size.y;
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + alignment);
+#ifdef WINRT_XBOX
+		ImGui::TextWrapped(FSUI_CSTR("Version: %s"), APP_VERSION);
+#else
 		ImGui::TextWrapped(FSUI_CSTR("Version: %s"), BuildVersion::GitRev);
+#endif
 
 		ImGui::EndPopup();
 	}
@@ -8770,7 +8776,7 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 
 		ImGui::PushTextWrapPos(content_width);
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead."));
+		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead."));
 		ImGui::PopStyleColor();
 		ImGui::PopTextWrapPos();
 
@@ -9366,7 +9372,7 @@ TRANSLATE_NOOP("FullscreenUI", "Settings");
 TRANSLATE_NOOP("FullscreenUI", "Changes settings for the application.");
 TRANSLATE_NOOP("FullscreenUI", "Exit");
 TRANSLATE_NOOP("FullscreenUI", "This exits the application back to Dev Home.");
-TRANSLATE_NOOP("FullscreenUI", "XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+TRANSLATE_NOOP("FullscreenUI", "XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or GitHub for any help with XBSX2 related issues.");
 TRANSLATE_NOOP("FullscreenUI", "Start File");
 TRANSLATE_NOOP("FullscreenUI", "Launch a game by selecting a file/disc image.");
 TRANSLATE_NOOP("FullscreenUI", "Start Disc");
@@ -9423,13 +9429,13 @@ TRANSLATE_NOOP("FullscreenUI", "Game Display");
 TRANSLATE_NOOP("FullscreenUI", "Automatically switches to fullscreen mode when a game is started.");
 TRANSLATE_NOOP("FullscreenUI", "Switches between full screen and windowed when the window is double-clicked.");
 TRANSLATE_NOOP("FullscreenUI", "Hides the mouse pointer/cursor when the emulator is in fullscreen mode.");
-TRANSLATE_NOOP("FullscreenUI", "Automatically starts Big Picture Mode instead of the regular Qt interface when PCSX2 launches.");
+TRANSLATE_NOOP("FullscreenUI", "Automatically starts Big Picture Mode instead of the regular Qt interface when XBSX2 launches.");
 TRANSLATE_NOOP("FullscreenUI", "On-Screen Display");
 TRANSLATE_NOOP("FullscreenUI", "Determines how large the on-screen messages and monitors are.");
 TRANSLATE_NOOP("FullscreenUI", "%d%%");
 TRANSLATE_NOOP("FullscreenUI", "Determines where on-screen display messages are positioned.");
 TRANSLATE_NOOP("FullscreenUI", "Determines where performance statistics are positioned.");
-TRANSLATE_NOOP("FullscreenUI", "Shows the current PCSX2 version.");
+TRANSLATE_NOOP("FullscreenUI", "Shows the current XBSX2 version.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the current emulation speed of the system as a percentage.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the number of internal video frames displayed per second by the system.");
 TRANSLATE_NOOP("FullscreenUI", "Shows the number of Vsyncs performed per second by the system.");
@@ -9781,7 +9787,7 @@ TRANSLATE_NOOP("FullscreenUI", "XBSX2 is a free and open-source PlayStation 2 (P
 TRANSLATE_NOOP("FullscreenUI", "PlayStation 2 and PS2 are registered trademarks of Sony Interactive Entertainment. This application is not affiliated in any way with Sony Interactive Entertainment.");
 TRANSLATE_NOOP("FullscreenUI", "Version: %s");
 TRANSLATE_NOOP("FullscreenUI", "RetroAchievements");
-TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead.");
+TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead.");
 TRANSLATE_NOOP("FullscreenUI", "Username");
 TRANSLATE_NOOP("FullscreenUI", "Password");
 TRANSLATE_NOOP("FullscreenUI", "Logging in...");
@@ -10126,7 +10132,7 @@ TRANSLATE_NOOP("FullscreenUI", "Start Big Picture UI");
 TRANSLATE_NOOP("FullscreenUI", "OSD Scale");
 TRANSLATE_NOOP("FullscreenUI", "OSD Messages Position");
 TRANSLATE_NOOP("FullscreenUI", "OSD Performance Position");
-TRANSLATE_NOOP("FullscreenUI", "Show PCSX2 Version");
+TRANSLATE_NOOP("FullscreenUI", "Show XBSX2 Version");
 TRANSLATE_NOOP("FullscreenUI", "Show Speed");
 TRANSLATE_NOOP("FullscreenUI", "Show FPS");
 TRANSLATE_NOOP("FullscreenUI", "Show VPS");

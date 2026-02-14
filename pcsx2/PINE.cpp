@@ -3,6 +3,7 @@
 
 #include "BuildVersion.h"
 #include "Common.h"
+#include "ImGui/FullscreenUI.h"
 #include "Host.h"
 #include "Memory.h"
 #include "Elfheader.h"
@@ -632,16 +633,13 @@ PINEServer::IPCBuffer PINEServer::ParseCommand(std::span<u8> buf, std::vector<u8
 				if (!VMManager::HasValidVM())
 					goto error;
 				u32 size = 0;
-				if (UWP_APP_VERSION)
-				{
-					size = strlen(UWP_APP_VERSION) + 7;
-					snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", UWP_APP_VERSION);
-				}
-				else
-				{
-					size = strlen(BuildVersion::GitRev) + 7;
-					snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
-				}
+#ifdef WINRT_XBOX
+				size = strlen(APP_VERSION) + 7;
+				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", APP_VERSION);
+#else
+				size = strlen(BuildVersion::GitRev) + 7;
+				snprintf(reinterpret_cast<char*>(&ret_buffer[ret_cnt]), size, "XBSX2 %s", BuildVersion::GitRev);
+#endif
 				ret_cnt += size;
 				break;
 			}

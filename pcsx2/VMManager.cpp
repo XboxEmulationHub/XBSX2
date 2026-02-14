@@ -2543,8 +2543,8 @@ void LogGPUCapabilities()
 
 void VMManager::LogCPUCapabilities()
 {
-#ifdef UWP_APP_VERSION
-	Console.WriteLn(Color_StrongGreen, "XBSX2 %s", UWP_APP_VERSION);
+#ifdef WINRT_XBOX
+	Console.WriteLn(Color_StrongGreen, "XBSX2 %s", APP_VERSION);
 #else
 	Console.WriteLn(Color_StrongGreen, "XBSX2 %s", BuildVersion::GitRev);
 #endif

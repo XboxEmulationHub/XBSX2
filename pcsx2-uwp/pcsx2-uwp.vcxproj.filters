@@ -60,7 +60,7 @@
     <ClCompile Include="..\pcsx2\PrecompiledHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="App.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -79,10 +79,7 @@
     <None Include="packages.config">
       <Filter>Package</Filter>
     </None>
-    <None Include="pcsx2-winrt_TemporaryKey.pfx">
-      <Filter>Package</Filter>
-    </None>
-    <None Include="xbsx2_TemporaryKey.pfx">
+    <None Include="pcsx2-uwp_TemporaryKey.pfx">
       <Filter>Package</Filter>
     </None>
     <None Include="PropertySheet.props">

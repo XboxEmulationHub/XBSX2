@@ -60,11 +60,11 @@ You should now have Visual Studio 2022 set up for UWP development!
 2. Change the configuration from `Debug` to `Release` to optimize the build for performance.
 3. When you try to build, you **will** encounter an error such as:
 ```
-Payload file C:\Users\Stern\Documents\XBSX2\pcsx2-winrt\resources\patches.zip’ does not exist.
+Payload file C:\Users\Stern\Documents\XBSX2\pcsx2-uwp\resources\patches.zip’ does not exist.
 ```
 To fix this:
 1. Locate the `patches.zip` file that you downloaded earlier.
-2. Move it to the following directory inside your cloned repository: `XBSX2\pcsx2-winrt\Resources`.
+2. Move it to the following directory inside your cloned repository: `XBSX2\pcsx2-uwp\Resources`.
 3. After placing the file, try building the project again.
 
 ## Step 8: Configure for Xbox Deployment

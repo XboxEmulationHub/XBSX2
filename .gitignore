@@ -135,10 +135,10 @@ CMakeSettings.json
 /.cache/
 
 # UWP/Xbox specific ignores
-/pcsx2-winrt/readme.txt
-/pcsx2-winrt/resources
-/pcsx2-winrt/Generated Files/winrt
-/pcsx2-winrt/BundleArtifacts
+/pcsx2-uwp/readme.txt
+/pcsx2-uwp/resources
+/pcsx2-uwp/Generated Files/winrt
+/pcsx2-uwp/BundleArtifacts
 /AppPackages
 /packages
 /findstr_CLI.bat

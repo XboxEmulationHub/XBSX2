@@ -19,7 +19,7 @@
 #include "VMManager.h"
 
 #if defined(WINRT_XBOX)
-#include "pcsx2-winrt/UWPUtils.h"
+#include "pcsx2-uwp/UWPUtils.h"
 #endif
 
 #include <cinttypes>

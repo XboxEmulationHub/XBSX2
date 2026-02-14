@@ -42,8 +42,8 @@ static constexpr FPControlRegister DEFAULT_VU_FP_CONTROL_REGISTER = FPControlReg
 
 Pcsx2Config EmuConfig;
 
-#ifdef WINRT_XBOX
-#include "pcsx2-winrt/UWPUtils.h"
+#if defined(WINRT_XBOX)
+#include "pcsx2-uwp/UWPUtils.h"
 #endif
 
 const char* SettingInfo::StringDefaultValue() const

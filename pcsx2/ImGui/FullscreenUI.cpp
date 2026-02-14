@@ -1393,7 +1393,7 @@ void FullscreenUI::DrawLandingWindow()
 			s_current_main_window = MainWindowType::Exit;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
-		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+		const char* info_text = FSUI_CSTR("XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or GitHub for any help with XBSX2 related issues.");
 		const float left_margin = LayoutScale(10.0f);
 		const float bottom_margin = LayoutScale(10.0f);
 		const float y_pos = ImGui::GetWindowSize().y - ImGui::GetTextLineHeightWithSpacing() - bottom_margin;
@@ -4075,7 +4075,7 @@ TRANSLATE_NOOP("FullscreenUI", "Settings");
 TRANSLATE_NOOP("FullscreenUI", "Changes settings for the application.");
 TRANSLATE_NOOP("FullscreenUI", "Exit");
 TRANSLATE_NOOP("FullscreenUI", "Exit the application and return to Dev Home.");
-TRANSLATE_NOOP("FullscreenUI", "XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or Forums/GitHub for any help with Xbox/XBSX2 related issues.");
+TRANSLATE_NOOP("FullscreenUI", "XBSX2 is an unofficial fork of PCSX2. Please do not go to the PCSX2 Discord or GitHub for any help with XBSX2 related issues.");
 TRANSLATE_NOOP("FullscreenUI", "Start File");
 TRANSLATE_NOOP("FullscreenUI", "Launch a game by selecting a file/disc image.");
 TRANSLATE_NOOP("FullscreenUI", "Start Disc");

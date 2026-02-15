@@ -80,7 +80,6 @@ static bool s_running = true;
 static std::thread s_gamescanner_thread;
 std::atomic<bool> b_gamescan_active = false;
 
-
 namespace WinRTHost
 {
 	static bool InitializeConfig();
@@ -500,7 +499,7 @@ std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
 		wi.surface_width = width;
 		wi.surface_height = height;
 		wi.surface_scale = 1.0f;
-		wi.type = WindowInfo::Type::Win32;
+		wi.type = WindowInfo::Type::WinRT;
 		wi.surface_handle = reinterpret_cast<void*>(winrt::get_abi(*s_corewind));
 	}
 	else

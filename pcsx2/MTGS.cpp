@@ -987,6 +987,19 @@ void MTGS::UpdateVSyncMode()
 	SetVSyncMode(VMManager::GetEffectiveVSyncMode(), VMManager::ShouldAllowPresentThrottle());
 }
 
+void MTGS::ReapplyVSyncMode()
+{
+	if (!EmuConfig.GS.VsyncEnable)
+		return;
+	pxAssertRel(IsOpen(), "MTGS is running");
+	const GSVSyncMode mode = VMManager::GetEffectiveVSyncMode();
+	const bool allow_present_throttle = VMManager::ShouldAllowPresentThrottle();
+	RunOnGSThread([mode, allow_present_throttle]() {
+		GSSetVSyncMode(GSVSyncMode::Disabled, true);
+		GSSetVSyncMode(mode, allow_present_throttle);
+	});
+}
+
 void MTGS::SetSoftwareRendering(bool software, GSInterlaceMode interlace, bool display_message /* = true */)
 {
 	pxAssertRel(IsOpen(), "MTGS is running");

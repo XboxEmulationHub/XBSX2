@@ -5126,10 +5126,12 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 			FSUI_CSTR("Skips displaying frames that don't change in 25/30fps games. Can improve speed, but increase input lag/make frame pacing "
 					  "worse."),
 			"EmuCore/GS", "SkipDuplicateFrames", false);
+#ifndef WINRT_XBOX
 		DrawToggleSetting(bsi, FSUI_CSTR("Disable Mailbox Presentation"),
 			FSUI_CSTR("Forces the use of FIFO over Mailbox presentation, i.e. double buffering instead of triple buffering. "
 					  "Usually results in worse frame pacing."),
 			"EmuCore/GS", "DisableMailboxPresentation", false);
+#endif
 		/* DrawToggleSetting(bsi, FSUI_CSTR("Extended Upscaling Multipliers"),
 			FSUI_CSTR("Displays additional, very high upscaling multipliers dependent on GPU capability."),
 			"EmuCore/GS", "ExtendedUpscalingMultipliers", false); */

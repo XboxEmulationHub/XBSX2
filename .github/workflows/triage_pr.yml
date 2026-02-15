@@ -5,7 +5,7 @@ on: pull_request_target
 
 jobs:
   triage:
-    if: github.repository == 'PCSX2/pcsx2'
+    if: github.repository == 'XboxEmulationHub/XBSX2'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/labeler@v7
@@ -17,7 +17,7 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
         debug-mode: false
         pr-message: |-
-          ## Thank you for submitting a contribution to PCSX2
+          ## Thank you for submitting a contribution to XBSX2
 
           As this is your first pull request, [please be aware of the contributing guidelines](https://pcsx2.net/docs/contributing/).
 

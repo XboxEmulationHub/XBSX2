@@ -213,7 +213,34 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 #ifndef WINRT_XBOX
 	MapController(si, 0, InputManager::GetGenericBindingMapping("Keyboard"));
 #else
-	MapController(si, 0, InputManager::GetGenericBindingMapping("SDL-0"));
+	const std::string section = GetConfigSection(0);
+	si.SetStringValue(section.c_str(), "Up", "SDL-0/DPadUp");
+	si.SetStringValue(section.c_str(), "Right", "SDL-0/DPadRight");
+	si.SetStringValue(section.c_str(), "Down", "SDL-0/DPadDown");
+	si.SetStringValue(section.c_str(), "Left", "SDL-0/DPadLeft");
+	si.SetStringValue(section.c_str(), "Triangle", "SDL-0/FaceNorth");
+	si.SetStringValue(section.c_str(), "Circle", "SDL-0/FaceEast");
+	si.SetStringValue(section.c_str(), "Cross", "SDL-0/FaceSouth");
+	si.SetStringValue(section.c_str(), "Square", "SDL-0/FaceWest");
+	si.SetStringValue(section.c_str(), "Select", "SDL-0/Back");
+	si.SetStringValue(section.c_str(), "Start", "SDL-0/Start");
+	si.SetStringValue(section.c_str(), "L1", "SDL-0/LeftShoulder");
+	si.SetStringValue(section.c_str(), "L2", "SDL-0/+LeftTrigger");
+	si.SetStringValue(section.c_str(), "R1", "SDL-0/RightShoulder");
+	si.SetStringValue(section.c_str(), "R2", "SDL-0/+RightTrigger");
+	si.SetStringValue(section.c_str(), "L3", "SDL-0/LeftStick");
+	si.SetStringValue(section.c_str(), "R3", "SDL-0/RightStick");
+	si.SetStringValue(section.c_str(), "LUp", "SDL-0/-LeftY");
+	si.SetStringValue(section.c_str(), "LRight", "SDL-0/+LeftX");
+	si.SetStringValue(section.c_str(), "LDown", "SDL-0/+LeftY");
+	si.SetStringValue(section.c_str(), "LLeft", "SDL-0/-LeftX");
+	si.SetStringValue(section.c_str(), "RUp", "SDL-0/-RightY");
+	si.SetStringValue(section.c_str(), "RRight", "SDL-0/+RightX");
+	si.SetStringValue(section.c_str(), "RDown", "SDL-0/+RightY");
+	si.SetStringValue(section.c_str(), "RLeft", "SDL-0/-RightX");
+	si.SetStringValue(section.c_str(), "Analog", "SDL-0/Guide");
+	si.SetStringValue(section.c_str(), "LargeMotor", "SDL-0/LargeMotor");
+	si.SetStringValue(section.c_str(), "SmallMotor", "SDL-0/SmallMotor");
 #endif
 }
 
@@ -257,7 +284,11 @@ void Pad::SetDefaultHotkeyConfig(SettingsInterface& si)
 	//	si.SetStringValue("Hotkeys", "IncreaseSpeed", "Keyboard"); TBD
 	//  si.SetStringValue("Hotkeys", "ResetVM", "Keyboard"); TBD
 	//  si.SetStringValue("Hotkeys", "ShutdownVM", "Keyboard"); TBD
-	si.SetStringValue("Hotkeys", "OpenPauseMenu", "SDL-0 Left Stick + SDL-0 Right Stick");
+#ifdef WINRT_XBOX
+	si.SetStringValue("Hotkeys", "OpenPauseMenu", "SDL-0/LeftStick & SDL-0/RightStick");
+#else
+	si.SetStringValue("Hotkeys", "OpenPauseMenu", "Keyboard/Escape");
+#endif
 	si.SetStringValue("Hotkeys", "ToggleFrameLimit", "Keyboard/F4");
 	si.SetStringValue("Hotkeys", "TogglePause", "Keyboard/Space");
 	si.SetStringValue("Hotkeys", "ToggleSlowMotion", "Keyboard/Shift & Keyboard/Backtab");

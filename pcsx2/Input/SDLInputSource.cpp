@@ -1,4 +1,3 @@
-#if SDL_BUILD
 // SPDX-FileCopyrightText: 2002-2025 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
@@ -611,6 +610,11 @@ void SDLInputSource::SetHints()
 	SDL_SetHint(SDL_HINT_JOYSTICK_RAWINPUT, m_use_raw_input ? "1" : "0");
 	SDL_SetHint(SDL_HINT_JOYSTICK_ENHANCED_REPORTS, m_enable_enhanced_reports ? "auto" : "0"); // PS4/PS5 Rumble
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_PS5_PLAYER_LED, m_enable_ps5_player_leds ? "1" : "0");
+#ifdef WINRT_XBOX
+	// Xbox/UWP expose pads through WGI/GameInput.
+	SDL_SetHint("SDL_JOYSTICK_WGI", "1");
+	SDL_SetHint("SDL_JOYSTICK_GAMEINPUT", "1");
+#endif
 	// Enable Wii U Pro Controller support
 	SDL_SetHint(SDL_HINT_JOYSTICK_HIDAPI_WII, "1");
 #ifndef _WIN32
@@ -1758,4 +1762,3 @@ bool SDLInputSource::IsControllerSixaxis(const ControllerData& cd)
 		   SDL_GetNumJoystickAxes(cd.joystick) == 16 &&
 		   SDL_GetNumJoystickButtons(cd.joystick) == 11;
 }
-#endif

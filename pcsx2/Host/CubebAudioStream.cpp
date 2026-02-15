@@ -122,16 +122,22 @@ bool CubebAudioStream::Initialize(const char* driver_name, const char* device_na
 	cubeb_set_log_callback(CUBEB_LOG_NORMAL, LogCallback);
 
 #ifdef _WIN32
-	const HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (hr == RPC_E_CHANGED_MODE)
+		hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
 	if (FAILED(hr))
 	{
 		Error::SetHResult(error, "CoInitializeEx() failed: ", hr);
 		return false;
 	}
-	wil::unique_couninitialize_call uninit;
+
+	// Only uninit COM if we init it in this function.
+	// S_FALSE means COM was already init on this thread.
+	wil::unique_couninitialize_call uninit(hr == S_OK);
 #endif
 
-	int rv = cubeb_init(&m_context, "PCSX2", (driver_name && *driver_name) ? driver_name : nullptr);
+	int rv = cubeb_init(&m_context, "XBSX2", (driver_name && *driver_name) ? driver_name : nullptr);
 	if (rv != CUBEB_OK)
 	{
 		Error::SetStringFmt(error, "Could not initialize cubeb context: {}", GetCubebErrorString(rv));
@@ -337,11 +343,11 @@ std::vector<AudioStream::DeviceInfo> AudioStream::GetCubebOutputDevices(const ch
 		ERROR_LOG("CoInitializeEx failed: {}", Error::CreateHResult(hr).GetDescription());
 		return ret;
 	}
-	wil::unique_couninitialize_call uninit;
+	wil::unique_couninitialize_call uninit(hr == S_OK);
 #endif
 
 	cubeb* context;
-	int rv = cubeb_init(&context, "PCSX2", (driver && *driver) ? driver : nullptr);
+	int rv = cubeb_init(&context, "XBSX2", (driver && *driver) ? driver : nullptr);
 	if (rv != CUBEB_OK)
 	{
 		ERROR_LOG("cubeb_init() failed: {}", GetCubebErrorString(rv));

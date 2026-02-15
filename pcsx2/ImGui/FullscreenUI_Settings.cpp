@@ -364,6 +364,9 @@ void FullscreenUI::ClearInputBindingVariables()
 	s_input_binding_display_name = {};
 	s_input_binding_new_bindings = {};
 	s_input_binding_value_ranges = {};
+#if defined(WINRT_XBOX)
+	s_input_binding_controller_source_filter.reset();
+#endif
 }
 
 void FullscreenUI::BeginInputBinding(SettingsInterface* bsi, InputBindingInfo::Type type, const std::string_view section,
@@ -385,9 +388,30 @@ void FullscreenUI::BeginInputBinding(SettingsInterface* bsi, InputBindingInfo::T
 
 	const bool game_settings = IsEditingGameSettings(bsi);
 
+#if defined(WINRT_XBOX)
+	{
+		const bool sdl_enabled = GetEffectiveBoolSetting(bsi, "InputSources", "SDL", true);
+		const bool xinput_enabled = GetEffectiveBoolSetting(bsi, "InputSources", "XInput", false);
+
+		if (sdl_enabled == xinput_enabled)
+			s_input_binding_controller_source_filter.reset();
+		else
+			s_input_binding_controller_source_filter = sdl_enabled ? InputSourceType::SDL : InputSourceType::XInput;
+	}
+#endif
+
 	InputManager::SetHook([game_settings](InputBindingKey key, float value) -> InputInterceptHook::CallbackResult {
 		if (s_input_binding_type == InputBindingInfo::Type::Unknown)
 			return InputInterceptHook::CallbackResult::StopProcessingEvent;
+
+#if defined(WINRT_XBOX)
+		if (s_input_binding_controller_source_filter.has_value())
+		{
+			const InputSourceType st = key.source_type;
+			if ((st == InputSourceType::SDL || st == InputSourceType::XInput) && st != s_input_binding_controller_source_filter.value())
+				return InputInterceptHook::CallbackResult::StopProcessingEvent;
+		}
+#endif
 
 		// holding the settings lock here will protect the input binding list
 		auto lock = Host::GetSettingsLock();
@@ -5104,6 +5128,16 @@ void FullscreenUI::DrawControllerSettingsPage()
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_GEAR, "Enable XInput Input Source"),
 		FSUI_CSTR("The XInput source provides support for XBox 360/XBox One/XBox Series controllers."), "InputSources", "XInput", false,
 		true, false);
+#endif
+
+#if defined(WINRT_XBOX)
+	// Don't allow disabling all controller input sources.
+	if (!bsi->GetBoolValue("InputSources", "SDL", true) && !bsi->GetBoolValue("InputSources", "XInput", false))
+	{
+		bsi->SetBoolValue("InputSources", "SDL", true);
+		SetSettingsChanged(bsi);
+		ShowToast({}, FSUI_STR("At least one controller input source must be enabled."));
+	}
 #endif
 
 	MenuHeading(FSUI_CSTR("Multitap"));

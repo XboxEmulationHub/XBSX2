@@ -681,7 +681,13 @@ void VMManager::LoadInputBindings(SettingsInterface& si, std::unique_lock<std::m
 	// Hotkeys use the base configuration, except if the custom hotkeys option is enabled.
 	if (SettingsInterface* isi = Host::Internal::GetInputSettingsLayer())
 	{
-		const bool use_profile_hotkeys = isi->GetBoolValue("Pad", "UseProfileHotkeyBindings", false);
+		const bool use_profile_hotkeys = isi->GetBoolValue("Pad", "UseProfileHotkeyBindings",
+#if defined(WINRT_XBOX)
+			true
+#else
+			false
+#endif
+		);
 		if (use_profile_hotkeys)
 		{
 			InputManager::ReloadBindings(si, *isi, *isi, true, true);

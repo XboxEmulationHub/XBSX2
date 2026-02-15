@@ -2,19 +2,30 @@
 setlocal enabledelayedexpansion
 
 echo Setting environment...
-if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat" (
-  call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
-  call "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
+if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" (
+  call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" x64 uwp
+) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" (
+  call "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 uwp
+) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" (
+  call "%ProgramFiles%\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x64 uwp
 ) else (
   echo Visual Studio 2022 not found.
+  goto error
+)
+if errorlevel 1 (
+  echo Failed to initialize MSVC UWP toolchain.
+  goto error
+)
+echo VSCMD_ARG_APP_PLAT=%VSCMD_ARG_APP_PLAT%
+if /I "%VSCMD_ARG_APP_PLAT%"=="Desktop" (
+  echo vcvarsall did not enter UWP/store mode. Aborting.
   goto error
 )
 
 set SEVENZIP="C:\Program Files\7-Zip\7z.exe"
 set PATCH="C:\Program Files\Git\usr\bin\patch.exe"
 set GIT="C:\Program Files\Git\bin\git.exe"
-set "UWP_CMAKE_FLAGS=-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0"
+set "UWP_CMAKE_FLAGS=-DCMAKE_SYSTEM_NAME=WindowsStore -DCMAKE_SYSTEM_VERSION=10.0 -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY"
 
 if defined DEBUG (
   echo DEBUG=%DEBUG%
@@ -105,7 +116,7 @@ echo Building libjpegturbo...
 rmdir /S /Q "libjpeg-turbo-%LIBJPEGTURBO%"
 tar -xf "libjpeg-turbo-%LIBJPEGTURBO%.tar.gz" || goto error
 cd "libjpeg-turbo-%LIBJPEGTURBO%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_SYSTEM_PROCESSOR=AMD64 -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DBUILD_STATIC_LIBS=OFF -DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=ON -B build -G Ninja || goto error
+cmake -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_SYSTEM_PROCESSOR=AMD64 -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DENABLE_SHARED=ON -DENABLE_STATIC=OFF -DWITH_CRT_DLL=ON -DWITH_TOOLS=OFF -DWITH_TESTS=OFF -DWITH_JAVA=OFF -DWITH_SIMD=OFF -B build -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
@@ -133,7 +144,7 @@ echo Building HarfBuzz...
 rmdir /S /Q "harfbuzz-%HARFBUZZ%"
 %SEVENZIP% x "-x^!harfbuzz-%HARFBUZZ%\README" "harfbuzz-%HARFBUZZ%.zip" || goto error
 cd "harfbuzz-%HARFBUZZ%" || goto error
-cmake -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DHB_BUILD_UTILS=OFF -B build -G Ninja || goto error
+cmake -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DBUILD_SHARED_LIBS=ON -DHB_BUILD_UTILS=OFF -DHAVE_MMAP=0 -DHAVE_MPROTECT=0 -B build -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error
@@ -160,7 +171,7 @@ echo Building WebP...
 rmdir /S /Q "libwebp-%WEBP%"
 tar -xf "libwebp-%WEBP%.tar.gz" || goto error
 cd "libwebp-%WEBP%" || goto error
-cmake -B build -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DWEBP_BUILD_ANIM_UTILS=OFF -DWEBP_BUILD_CWEBP=OFF -DWEBP_BUILD_DWEBP=OFF -DWEBP_BUILD_GIF2WEBP=OFF -DWEBP_BUILD_IMG2WEBP=OFF -DWEBP_BUILD_VWEBP=OFF -DWEBP_BUILD_WEBPINFO=OFF -DWEBP_BUILD_WEBPMUX=OFF -DWEBP_BUILD_EXTRAS=OFF -DBUILD_SHARED_LIBS=ON -G Ninja || goto error
+cmake -B build -DCMAKE_BUILD_TYPE=Release %UWP_CMAKE_FLAGS% -DCMAKE_PREFIX_PATH="%INSTALLDIR%" -DCMAKE_INSTALL_PREFIX="%INSTALLDIR%" -DWEBP_BUILD_ANIM_UTILS=OFF -DWEBP_BUILD_CWEBP=OFF -DWEBP_BUILD_DWEBP=OFF -DWEBP_BUILD_GIF2WEBP=OFF -DWEBP_BUILD_IMG2WEBP=OFF -DWEBP_BUILD_VWEBP=OFF -DWEBP_BUILD_WEBPINFO=OFF -DWEBP_BUILD_WEBPMUX=OFF -DWEBP_BUILD_EXTRAS=OFF -DWEBP_USE_THREAD=OFF -DHAVE_BUILTIN_BSWAP16=0 -DHAVE_BUILTIN_BSWAP32=0 -DHAVE_BUILTIN_BSWAP64=0 -DCMAKE_C_FLAGS="/D__builtin_bswap16=_byteswap_ushort /D__builtin_bswap32=_byteswap_ulong /D__builtin_bswap64=_byteswap_uint64" -DBUILD_SHARED_LIBS=ON -G Ninja || goto error
 cmake --build build --parallel || goto error
 ninja -C build install || goto error
 cd .. || goto error

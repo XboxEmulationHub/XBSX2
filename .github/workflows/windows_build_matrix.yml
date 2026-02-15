@@ -21,9 +21,9 @@ jobs:
         run: .github\workflows\scripts\windows\validate-vs-filters.ps1
 
   build_qt_sse4:
+    if: false
     needs: lint_vs_proj_files
     name: "SSE4"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "MSVC SSE4"
@@ -33,9 +33,9 @@ jobs:
     secrets: inherit
 
   build_qt_avx2:
+    if: false
     needs: lint_vs_proj_files
     name: "AVX2"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "MSVC AVX2"
@@ -44,8 +44,8 @@ jobs:
     secrets: inherit
 
   build_qt_cmake:
+    if: false
     name: "CMake"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "CMake MSVC"
@@ -55,9 +55,9 @@ jobs:
     secrets: inherit
 
   build_qt_clang_sse4:
+    if: false
     needs: lint_vs_proj_files
     name: "SSE4"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "Clang SSE4"
@@ -67,9 +67,9 @@ jobs:
     secrets: inherit
 
   build_qt_clang_avx2:
+    if: false
     needs: lint_vs_proj_files
     name: "AVX2"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "Clang AVX2"
@@ -78,8 +78,8 @@ jobs:
     secrets: inherit
 
   build_qt_cmake_clang:
+    if: false
     name: "CMake"
-    if: github.repository != 'PCSX2/pcsx2' || github.event_name == 'pull_request'
     uses: ./.github/workflows/windows_build_qt.yml
     with:
       jobName: "CMake Clang"
@@ -87,4 +87,28 @@ jobs:
       configuration: CMake
       buildSystem: cmake
       cmakeFlags: -DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl -DPCSX2_EXE_NAME=pcsx2-qt-clang
+    secrets: inherit
+
+  # UWP MSBuild
+  build_uwp_release:
+    needs: lint_vs_proj_files
+    name: "UWP Release"
+    if: github.repository == 'XboxEmulationHub/XBSX2' || github.event_name == 'pull_request'
+    uses: ./.github/workflows/windows_build_uwp.yml
+    with:
+      jobName: "UWP Release"
+      artifactPrefixName: "XBSX2-windows-uwp-x64-release"
+      configuration: Release
+      simd: "SSE4"
+    secrets: inherit
+
+  build_uwp_avx2:
+    needs: lint_vs_proj_files
+    name: "UWP AVX2"
+    if: github.repository == 'XboxEmulationHub/XBSX2' || github.event_name == 'pull_request'
+    uses: ./.github/workflows/windows_build_uwp.yml
+    with:
+      jobName: "UWP AVX2"
+      artifactPrefixName: "XBSX2-windows-uwp-x64-avx2"
+      configuration: Release AVX2
     secrets: inherit

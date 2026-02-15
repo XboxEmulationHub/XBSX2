@@ -1,0 +1,155 @@
+name: Windows Build Steps - UWP
+
+on:
+  workflow_call:
+    inputs:
+      jobName:
+        required: true
+        type: string
+      artifactPrefixName:
+        required: true
+        type: string
+      os:
+        required: false
+        type: string
+        default: windows-2025
+      platform:
+        required: false
+        type: string
+        default: x64
+      configuration:
+        required: true
+        type: string
+      simd:
+        required: false
+        type: string
+        default: AVX2
+      patchesUrl:
+        required: false
+        type: string
+        default: https://github.com/PCSX2/pcsx2_patches/releases/latest/download
+      fetchTags:
+        required: false
+        type: boolean
+        default: false
+      stableBuild:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build_windows_uwp:
+    name: ${{ inputs.jobName }}
+    runs-on: ${{ inputs.os }}
+    # Set some sort of timeout in the event of run-away builds.  We are limited on concurrent jobs so, get rid of them.
+    timeout-minutes: 90
+    env:
+      POWERSHELL_TELEMETRY_OPTOUT: 1
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      # actions/checkout elides tags, fetch them primarily for releases
+      - name: Fetch Tags
+        if: ${{ inputs.fetchTags }}
+        run: git fetch --tags --no-recurse-submodules
+
+      - name: Add stable release identifier file
+        if: ${{ inputs.stableBuild == true || inputs.stableBuild == 'true' }}
+        shell: bash
+        run: |
+          echo "#define DEFAULT_UPDATER_CHANNEL \"stable\"" > ./pcsx2-qt/DefaultUpdaterChannel.h
+          cat ./pcsx2-qt/DefaultUpdaterChannel.h
+
+      - name: Extract Version from AppxManifest
+        id: extract-version
+        shell: pwsh
+        run: |
+          $manifest = [xml](Get-Content pcsx2-uwp\Package.appxmanifest)
+          $version = $manifest.Package.Identity.Version
+          Write-Host "Version: $version"
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Prepare Artifact Metadata
+        id: artifact-metadata
+        shell: bash
+        env:
+          PREFIX: ${{ inputs.artifactPrefixName }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUM: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+        run: ./.github/workflows/scripts/common/name-artifacts.sh
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2.0.1
+
+      - name: Download Patches
+        shell: cmd
+        run: |
+          cd bin/resources
+          aria2c -Z "${{ inputs.patchesUrl }}/patches.zip"
+
+      - name: Cache Dependencies
+        id: cache-deps
+        uses: actions/cache@v5.0.3
+        with:
+          path: deps
+          key: ${{ inputs.os }} ${{ inputs.platform }} deps ${{ hashFiles('.github/workflows/scripts/uwp/build-dependencies-uwp.bat', '.github/workflows/scripts/common/*.patch') }}
+
+      - name: Build Dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        env:
+          DEBUG: 0
+        run: .github/workflows/scripts/uwp/build-dependencies-uwp.bat
+
+      - name: Restore NuGet Packages
+        run: nuget restore PCSX2_qt.sln
+
+      - name: Build XBSX2 UWP
+        shell: cmd
+        run: |
+          msbuild "PCSX2_qt.sln" /m /v:m /p:PlatformToolset=v143 /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /t:restore,build /p:RestorePackagesConfig=true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ steps.artifact-metadata.outputs.artifact-name }}
+          path: |
+            ./AppPackages
+            !./AppPackages/**/*.bsc
+            !./AppPackages/**/*.exp
+            !./AppPackages/**/*.ilk
+            !./AppPackages/**/*.iobj
+            !./AppPackages/**/*.ipdb
+            !./AppPackages/**/*.pdb
+            !./AppPackages/**/*.lib
+
+      - name: Install the Breakpad Symbol Generator
+        uses: baptiste0928/cargo-install@b687c656bda5733207e629b50a22bf68974a0305
+        with:
+          crate: dump_syms
+
+      - name: Generate Breakpad Symbols
+        shell: pwsh
+        run: |
+          mkdir -Force symbols
+          Get-ChildItem -Path ./bin -Recurse -File | Where-Object { 
+            ($_.Extension -eq ".exe" -or $_.Extension -eq ".pdb") 
+          } | ForEach-Object { 
+            & dump_syms $_.FullName >> symbols/pcsx2-uwp.bpsym
+          }
+          Get-ChildItem -Path ./bin -Recurse -Filter "*.pdb" | ForEach-Object {
+            Copy-Item $_.FullName -Destination symbols/
+          }
+
+      - name: Upload Artifact - with Symbols
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ steps.artifact-metadata.outputs.artifact-name }}-symbols
+          path: |
+            ./symbols

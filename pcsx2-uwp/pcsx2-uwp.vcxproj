@@ -225,6 +225,7 @@
   <ItemGroup>
     <ClCompile Include="..\pcsx2\PrecompiledHeader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UWPSound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

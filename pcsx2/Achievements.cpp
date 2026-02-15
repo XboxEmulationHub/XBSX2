@@ -31,6 +31,10 @@
 #include "common/StringUtil.h"
 #include "common/Timer.h"
 
+#ifdef WINRT_XBOX
+#include "pcsx2-uwp/UWPUtils.h"
+#endif
+
 #include "IconsPromptFont.h"
 #include "fmt/format.h"
 #include "rc_client.h"
@@ -1142,7 +1146,13 @@ void Achievements::DisplayAchievementSummary()
 	}
 
 	if (EmuConfig.Achievements.SoundEffects && EmuConfig.Achievements.InfoSound)
+	{
+#ifdef WINRT_XBOX
+		UWP::PlaySoundAsync(EmuConfig.Achievements.InfoSoundName.c_str());
+#else
 		Common::PlaySoundAsync(EmuConfig.Achievements.InfoSoundName.c_str());
+#endif
+	}
 }
 
 void Achievements::DisplayHardcoreDeferredMessage()
@@ -1194,7 +1204,13 @@ void Achievements::HandleUnlockEvent(const rc_client_event_t* event)
 	}
 
 	if (EmuConfig.Achievements.SoundEffects && EmuConfig.Achievements.UnlockSound)
+	{
+#ifdef WINRT_XBOX
+		UWP::PlaySoundAsync(EmuConfig.Achievements.UnlockSoundName.c_str());
+#else
 		Common::PlaySoundAsync(EmuConfig.Achievements.UnlockSoundName.c_str());
+#endif
+	}
 }
 
 void Achievements::HandleGameCompleteEvent(const rc_client_event_t* event)
@@ -1288,7 +1304,13 @@ void Achievements::HandleLeaderboardSubmittedEvent(const rc_client_event_t* even
 	}
 
 	if (EmuConfig.Achievements.SoundEffects && EmuConfig.Achievements.LBSubmitSound)
+	{
+#ifdef WINRT_XBOX
+		UWP::PlaySoundAsync(EmuConfig.Achievements.LBSubmitSoundName.c_str());
+#else
 		Common::PlaySoundAsync(EmuConfig.Achievements.LBSubmitSoundName.c_str());
+#endif
+	}
 }
 
 void Achievements::HandleLeaderboardScoreboardEvent(const rc_client_event_t* event)

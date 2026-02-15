@@ -523,6 +523,9 @@ namespace FullscreenUI
 	inline std::vector<InputBindingKey> s_input_binding_new_bindings;
 	inline std::vector<std::pair<InputBindingKey, std::pair<float, float>>> s_input_binding_value_ranges;
 	inline Common::Timer s_input_binding_timer;
+#if defined(WINRT_XBOX)
+	inline std::optional<InputSourceType> s_input_binding_controller_source_filter;
+#endif
 	inline bool s_prefer_english_titles;
 
 } // namespace FullscreenUI

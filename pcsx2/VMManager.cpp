@@ -204,7 +204,7 @@ extern R5900cpu GSDumpReplayerCpu;
 
 bool VMManager::PerformEarlyHardwareChecks(const char** error)
 {
-#define COMMON_DOWNLOAD_MESSAGE "PCSX2 builds can be downloaded from https://pcsx2.net/downloads/"
+#define COMMON_DOWNLOAD_MESSAGE "XBSX2 builds can be downloaded from https://github.com/XboxEmulationHub/XBSX2/releases."
 
 #if defined(_M_X86)
 	// On Windows, this gets called as a global object constructor, before any of our objects are constructed.
@@ -214,8 +214,8 @@ bool VMManager::PerformEarlyHardwareChecks(const char** error)
 	if (!cpuinfo_has_x86_sse4_1())
 	{
 		*error =
-			"PCSX2 requires the Streaming SIMD 4.1 Extensions instruction set, which your CPU does not support.\n\n"
-			"SSE4.1 is now a minimum requirement for PCSX2. You should either upgrade your CPU, or use an older build "
+			"XBSX2 requires the Streaming SIMD 4.1 Extensions instruction set, which your CPU does not support.\n\n"
+			"SSE4.1 is now a minimum requirement for XBSX2. You should either upgrade your CPU, or use an older build "
 			"such as 1.6.0.\n\n" COMMON_DOWNLOAD_MESSAGE;
 		return false;
 	}
@@ -223,9 +223,9 @@ bool VMManager::PerformEarlyHardwareChecks(const char** error)
 #if _M_SSE >= 0x0501
 	if (!cpuinfo_has_x86_avx2())
 	{
-		*error = "This build of PCSX2 requires the Advanced Vector Extensions 2 instruction set, which your CPU does "
+		*error = "This build of XBSX2 requires the Advanced Vector Extensions 2 instruction set, which your CPU does "
 				 "not support.\n\n"
-				 "You should download and run the SSE4.1 build of PCSX2 instead, or upgrade to a CPU that supports "
+				 "You should download and run the SSE4.1 build of XBSX2 instead, or upgrade to a CPU that supports "
 				 "AVX2 to use this build.\n\n" COMMON_DOWNLOAD_MESSAGE;
 		return false;
 	}
@@ -1414,11 +1414,11 @@ VMBootResult VMManager::Initialize(const VMBootParameters& boot_params, Error* e
 		{
 			Error::SetStringFmt(error,
 				TRANSLATE_FS("VMManager",
-					"PCSX2 requires a PlayStation 2 BIOS in order to run.\n\n"
+					"XBSX2 requires a PlayStation 2 BIOS in order to run.\n\n"
 					"For legal reasons, you will need to obtain this BIOS from a PlayStation 2 unit which you own.\n\n"
 					"For step-by-step help with this process, please consult the setup guide at {}.\n\n"
-					"PCSX2 will be able to run once you've placed your BIOS image inside the folder named \"bios\" within the data directory "
-					"(Tools Menu -> Open Data Directory)."),
+					"XBSX2 will be able to run once you've placed your BIOS image inside the folder named \"bios\" within the data directory "
+					"(Dev Portal -> File Explorer -> LocalAppData -> XBSX2 -> LocalState)."),
 				PCSX2_DOCUMENTATION_BIOS_URL_SHORTENED);
 			return VMBootResult::StartupFailure;
 		}

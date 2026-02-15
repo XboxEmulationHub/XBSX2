@@ -64,7 +64,11 @@ GSDevice11::GSDevice11()
 	m_state.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	m_state.bf = -1;
 
+#ifdef WINRT_XBOX
+	m_features.primitive_id = false;
+#else
 	m_features.primitive_id = true;
+#endif
 	m_features.texture_barrier = false;
 	m_features.multidraw_fb_copy = false;
 	m_features.provoking_vertex_last = false;

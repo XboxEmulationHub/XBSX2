@@ -4195,9 +4195,21 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		if ((one_barrier || full_barrier) && !config.ps.IsFeedbackLoop()) [[unlikely]]
 			Console.Warning("D3D12: Possible unnecessary barrier detected.");
 #endif
-		if (one_barrier || full_barrier)
+		const bool rt_feedback = (one_barrier || full_barrier);
+		const bool tex_feedback = (config.tex && config.tex == config.rt);
+		bool used_unified_flush = false;
+#ifdef WINRT_XBOX
+		const bool needs_unified_flush = (rt_feedback || tex_feedback);
+		if (needs_unified_flush)
+		{
+			draw_rt->TransitionToState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+			draw_rt->TransitionToState(D3D12_RESOURCE_STATE_RENDER_TARGET);
+			used_unified_flush = true;
+		}
+#endif
+		if (rt_feedback)
 			PSSetShaderResource(2, draw_rt, false, true);
-		if (config.tex && config.tex == config.rt)
+		if (tex_feedback)
 			PSSetShaderResource(0, draw_rt, false, true);
 
 		if (full_barrier)
@@ -4232,11 +4244,16 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		{
 			g_perfmon.Put(GSPerfMon::Barriers, 1);
 
+#ifdef WINRT_XBOX
+			if (!used_unified_flush)
+#endif
+			{
 			EndRenderPass();
 			// Specify null for the after resource as both resources are used after the barrier.
 			D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
 			barrier.Aliasing = {draw_rt->GetResource(), nullptr};
 			GetCommandList()->ResourceBarrier(1, &barrier);
+			}
 		}
 	}
 

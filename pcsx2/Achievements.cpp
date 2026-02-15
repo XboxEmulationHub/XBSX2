@@ -31,6 +31,10 @@
 #include "common/StringUtil.h"
 #include "common/Timer.h"
 
+#ifdef WINRT_XBOX
+#include "pcsx2-uwp/UWPUtils.h"
+#endif
+
 #include "IconsPromptFont.h"
 #include "fmt/format.h"
 #include "rc_client.h"
@@ -944,10 +948,15 @@ void Achievements::PlayAchievementSound(bool is_specific_sound_enabled, const st
 	if (!EmuConfig.Achievements.SoundEffects || !is_specific_sound_enabled)
 		return;
 
-	if (custom_sound_name.empty() || !FileSystem::FileExists(custom_sound_name.c_str()))
-		Common::PlaySoundAsync(Path::Combine(EmuFolders::Resources, default_sound_name).c_str());
-	else
-		Common::PlaySoundAsync(custom_sound_name.c_str());
+	const std::string path = (custom_sound_name.empty() || !FileSystem::FileExists(custom_sound_name.c_str()))
+		? Path::Combine(EmuFolders::Resources, default_sound_name)
+		: custom_sound_name;
+
+#if !defined(WINRT_XBOX)
+	Common::PlaySoundAsync(path.c_str());
+#else
+	UWP::PlaySoundAsync(path.c_str());
+#endif
 }
 
 void Achievements::GameChanged(u32 disc_crc, u32 crc)

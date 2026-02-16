@@ -1518,10 +1518,10 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_features.texture_barrier = GSConfig.OverrideTextureBarriers != 0;
 	m_features.multidraw_fb_copy = false;
 	m_features.broken_point_sampler = false;
-#ifdef WINRT_XBOX
-	m_features.primitive_id = false;
-#else
+#if !defined(WINRT_XBOX)
 	m_features.primitive_id = true;
+#else
+	m_features.primitive_id = !GSConfig.DisablePrimitiveID;
 #endif
 	m_features.prefer_new_textures = true;
 	m_features.provoking_vertex_last = false;

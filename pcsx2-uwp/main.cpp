@@ -1,76 +1,44 @@
 #include "pcsx2/PrecompiledHeader.h"
 
 #include <windows.h>
-#include <winrt/Windows.Foundation.h>
+#include <gamingdeviceinformation.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Globalization.h>
 #include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.UI.Composition.h>
-#include <winrt/Windows.UI.Input.h>
 #include <winrt/Windows.UI.ViewManagement.Core.h>
 #include <winrt/Windows.Graphics.Display.Core.h>
 #include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.System.h>
-#include <gamingdeviceinformation.h>
 
 #define SDL_MAIN_HANDLED
-#include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 
-#include <chrono>
-#include <csignal>
-#include <cstdlib>
-#include <condition_variable>
-#include <mutex>
-#include <thread>
-#include <sstream>
-#include <string>
-
-#include "fmt/core.h"
-
-#include "common/Assertions.h"
-#include "common/Console.h"
 #include "common/CrashHandler.h"
 #include "common/FileSystem.h"
-#include "common/MemorySettingsInterface.h"
 #include "common/Path.h"
-#include "common/SettingsWrapper.h"
-#include "common/StringUtil.h"
 
-#include "pcsx2/CDVD/CDVD.h"
+#include "pcsx2/CDVD/CDVDcommon.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
 #include "pcsx2/Input/InputManager.h"
-#include "pcsx2/GS/GS.h"
-#include "pcsx2/GSDumpReplayer.h"
 #include "pcsx2/Host.h"
 #include "pcsx2/INISettingsInterface.h"
 #include "pcsx2/MTGS.h"
-#include "pcsx2/SIO/PAD/PAD.h"
-#include "pcsx2/PerformanceMetrics.h"
 #include "pcsx2/VMManager.h"
 
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiFullscreen.h"
 #include "pcsx2/GameList.h"
-#include "IconsFontAwesome6.h"
 
 #ifdef ENABLE_ACHIEVEMENTS
 #include "pcsx2/Achievements.h"
 #endif
 
-#include "3rdparty/imgui/include/imgui.h"
-
 using namespace winrt;
-
-using namespace Windows;
 using namespace Windows::ApplicationModel::Core;
 using namespace Windows::Graphics::Display::Core;
-using namespace Windows::Foundation::Numerics;
-using namespace Windows::UI;
 using namespace Windows::UI::Core;
-using namespace Windows::UI::Composition;
 
 static winrt::Windows::UI::Core::CoreWindow* s_corewind = NULL;
 static std::mutex m_event_mutex;
@@ -79,6 +47,107 @@ static std::thread::id s_cpu_thread_id;
 static bool s_running = true;
 static std::thread s_gamescanner_thread;
 std::atomic<bool> b_gamescan_active = false;
+
+static u32 s_xbox_output_width = 1920;
+static u32 s_xbox_output_height = 1080;
+static bool s_display_mode_query_failed = false;
+static bool s_using_display_resolution = false;
+static bool s_output_resolution_logged = false;
+
+static void InitOutputResolution()
+{
+	u32 max_width = 1920;
+	u32 max_height = 1080;
+
+	GAMING_DEVICE_MODEL_INFORMATION info = {};
+	GetGamingDeviceModelInformation(&info);
+
+	if (info.vendorId == GAMING_DEVICE_VENDOR_ID_MICROSOFT)
+	{
+		switch (info.deviceId)
+		{
+			// The Xbox One S can output to 4K but I don't have one to test on so we'll limit it to 1080p like the original Xbox One.
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE:
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S:
+				max_width = 1920;
+				max_height = 1080;
+				break;
+
+			// The Series S can output to 4K but if you try to make a 4K Swap Chain the application will crash,
+			// so we limit it to 1440p.
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_S:
+				max_width = 2560;
+				max_height = 1440;
+				break;
+
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X:
+			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X_DEVKIT:
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X:
+			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT:
+			default:
+				max_width = 3840;
+				max_height = 2160;
+				break;
+		}
+	}
+
+	u32 display_width = 0;
+	u32 display_height = 0;
+
+	try
+	{
+		HdmiDisplayInformation hdi = HdmiDisplayInformation::GetForCurrentView();
+		if (hdi)
+		{
+			display_width = hdi.GetCurrentDisplayMode().ResolutionWidthInRawPixels();
+			display_height = hdi.GetCurrentDisplayMode().ResolutionHeightInRawPixels();
+		}
+	}
+	catch (...)
+	{
+		s_display_mode_query_failed = true;
+	}
+
+	if (display_width > 0 && display_height > 0)
+	{
+		s_using_display_resolution = true;
+		s_xbox_output_width = std::min(display_width, max_width);
+		s_xbox_output_height = std::min(display_height, max_height);
+	}
+	else
+	{
+		s_using_display_resolution = false;
+		s_xbox_output_width = max_width;
+		s_xbox_output_height = max_height;
+	}
+}
+
+static void GetOutputSize(u32* width, u32* height)
+{
+	*width = s_xbox_output_width;
+	*height = s_xbox_output_height;
+
+	if (!s_output_resolution_logged)
+	{
+		s_output_resolution_logged = true;
+		if (s_display_mode_query_failed)
+		{
+			Console.WriteLnFmt("UWP: Failed to get display mode for {}, using device maximum: {}x{}",
+				GetConsoleModelString(), *width, *height);
+		}
+
+		if (s_using_display_resolution)
+		{
+			Console.WriteLnFmt("UWP: Using display resolution for {}: {}x{}",
+				GetConsoleModelString(), *width, *height);
+		}
+		else
+		{
+			Console.WriteLnFmt("UWP: Using device maximum resolution for {}: {}x{}",
+				GetConsoleModelString(), *width, *height);
+		}
+	}
+}
 
 namespace WinRTHost
 {
@@ -480,21 +549,9 @@ std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
 
 	if (s_corewind)
 	{
-		u32 width = 1920, height = 1080;
-		float scale = 1.0;
-		GAMING_DEVICE_MODEL_INFORMATION info = {};
-		GetGamingDeviceModelInformation(&info);
-		if (info.vendorId == GAMING_DEVICE_VENDOR_ID_MICROSOFT)
-		{
-			HdmiDisplayInformation hdi = HdmiDisplayInformation::GetForCurrentView();
-			if (hdi)
-			{
-				width = hdi.GetCurrentDisplayMode().ResolutionWidthInRawPixels();
-				height = hdi.GetCurrentDisplayMode().ResolutionHeightInRawPixels();
-				// Our UI is based on 1080p, and we're adding a modifier to zoom in by 80%
-				scale = ((float)width / 1920.0f) * 1.8f;
-			}
-		}
+		u32 width = 0;
+		u32 height = 0;
+		GetOutputSize(&width, &height);
 
 		wi.surface_width = width;
 		wi.surface_height = height;
@@ -683,6 +740,8 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	{
 		s_cpu_thread_id = std::this_thread::get_id();
 
+		InitOutputResolution();
+
 		CoreWindow window = CoreWindow::GetForCurrentThread();
 		window.Activate();
 		s_corewind = &window;
@@ -771,6 +830,7 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	void SetWindow(CoreWindow const& window)
 	{
 		window.CharacterReceived({this, &App::OnKeyInput});
+
 	}
 
 	void OnKeyInput(const IInspectable&, const winrt::Windows::UI::Core::CharacterReceivedEventArgs& args)

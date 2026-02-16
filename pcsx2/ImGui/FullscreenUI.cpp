@@ -8786,11 +8786,13 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 	if (s_achievements_login_open && !ImGui::IsPopupOpen("RetroAchievements"))
 		ImGui::OpenPopup("RetroAchievements");
 
-	ImGui::SetNextWindowSize(LayoutScale(420.0f, 350.0f));
+	const ImVec2 popup_size = LayoutScale(500.0f, 350.0f);
+	ImGui::SetNextWindowSize(popup_size, ImGuiCond_Appearing);
 	ImGui::SetNextWindowPos(ImGui::GetIO().DisplaySize * 0.5f, ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, LayoutScale(12.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, LayoutScale(24.0f, 24.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
+		LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
 	ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.13f, 0.13f, 0.13f, 0.95f));
 
 	if (ImGui::BeginPopupModal("RetroAchievements", &s_achievements_login_open, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar))
@@ -8822,17 +8824,21 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 		ImGui::Spacing();
 		ImGui::Spacing();
 
+		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 		ImGui::PushTextWrapPos(content_width);
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead."));
 		ImGui::PopStyleColor();
 		ImGui::PopTextWrapPos();
+		ImGui::PopFont();
 
 		ImGui::Spacing();
 		ImGui::Spacing();
 
+		ImGui::PushFont(g_large_font.first, g_large_font.second);
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, LayoutScale(8.0f));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, LayoutScale(12.0f, 10.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+			LayoutScale(LAYOUT_MENU_BUTTON_X_PADDING, LAYOUT_MENU_BUTTON_Y_PADDING));
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, LayoutScale(1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
@@ -8882,6 +8888,7 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 			ImGui::Spacing();
 		}
 
+		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 		const float button_height = LayoutScale(36.0f);
 		const float button_width = LayoutScale(100.0f);
 		const float button_spacing = LayoutScale(12.0f);
@@ -8931,6 +8938,8 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 			ImGui::PopStyleVar();
 			ImGui::EndPopup();
 			ImGui::PopStyleColor();
+			ImGui::PopFont();
+			ImGui::PopFont();
 			ImGui::PopStyleVar(2);
 			return;
 		}
@@ -9043,6 +9052,8 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 
 		ImGui::PopStyleColor(3);
 		ImGui::PopStyleVar();
+		ImGui::PopFont();
+		ImGui::PopFont();
 
 		ImGui::EndPopup();
 	}

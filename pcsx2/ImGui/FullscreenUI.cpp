@@ -6063,7 +6063,13 @@ void FullscreenUI::DoSaveInputProfile(const std::string& name)
 
 	auto lock = Host::GetSettingsLock();
 	SettingsInterface* ssi = GetEditingSettingsInterface();
-	Pad::CopyConfiguration(&dsi, *ssi, true, true, IsEditingGameSettings(ssi));
+#ifdef WINRT_XBOX
+	const bool copy_hotkey_bindings = true;
+#else
+	const bool copy_hotkey_bindings = IsEditingGameSettings(ssi);
+#endif
+	dsi.SetBoolValue("Pad", "UseProfileHotkeyBindings", copy_hotkey_bindings);
+	Pad::CopyConfiguration(&dsi, *ssi, true, true, copy_hotkey_bindings);
 	USB::CopyConfiguration(&dsi, *ssi, true, true);
 	if (dsi.Save())
 		ShowToast(std::string(), fmt::format(FSUI_FSTR("Input profile '{}' saved."), name));

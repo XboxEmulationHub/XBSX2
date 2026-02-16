@@ -64,10 +64,10 @@ GSDevice11::GSDevice11()
 	m_state.topology = D3D11_PRIMITIVE_TOPOLOGY_UNDEFINED;
 	m_state.bf = -1;
 
-#ifdef WINRT_XBOX
-	m_features.primitive_id = false;
-#else
+#if !defined(WINRT_XBOX)
 	m_features.primitive_id = true;
+#else
+	m_features.primitive_id = !GSConfig.DisablePrimitiveID;
 #endif
 	m_features.texture_barrier = false;
 	m_features.multidraw_fb_copy = false;

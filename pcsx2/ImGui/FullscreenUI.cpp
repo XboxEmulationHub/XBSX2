@@ -5176,6 +5176,15 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 			"EmuCore/GS", "DisableShaderCache", false);
 		DrawToggleSetting(bsi, FSUI_CSTR("Disable Vertex Shader Expand"), FSUI_CSTR("Falls back to the CPU for expanding sprites/lines."),
 			"EmuCore/GS", "DisableVertexShaderExpand", false);
+		DrawToggleSetting(bsi, FSUI_CSTR("Disable Primitive ID Alpha Test"),
+			FSUI_CSTR("Disables Primitive ID support for DATE emulation (for buggy drivers)"),
+			"EmuCore/GS", "DisablePrimitiveID",
+#ifdef WINRT_XBOX
+			true
+#else
+			false
+#endif
+		);
 		DrawIntListSetting(bsi, FSUI_CSTR("Texture Preloading"),
 			FSUI_CSTR(
 				"Uploads full textures to the GPU on use, rather than only the utilized regions. Can improve performance in some games."),
@@ -9691,6 +9700,8 @@ TRANSLATE_NOOP("FullscreenUI", "Disable Shader Cache");
 TRANSLATE_NOOP("FullscreenUI", "Prevents the loading and saving of shaders/pipelines to disk.");
 TRANSLATE_NOOP("FullscreenUI", "Disable Vertex Shader Expand");
 TRANSLATE_NOOP("FullscreenUI", "Falls back to the CPU for expanding sprites/lines.");
+TRANSLATE_NOOP("FullscreenUI", "Disable Primitive ID Alpha Test");
+TRANSLATE_NOOP("FullscreenUI", "Disables Primitive ID support for DATE emulation (for buggy drivers)");
 TRANSLATE_NOOP("FullscreenUI", "Texture Preloading");
 TRANSLATE_NOOP("FullscreenUI", "Uploads full textures to the GPU on use, rather than only the utilized regions. Can improve performance in some games.");
 TRANSLATE_NOOP("FullscreenUI", "NTSC Frame Rate");

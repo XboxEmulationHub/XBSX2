@@ -46,7 +46,7 @@ GSDevice11::GSDevice11()
 	m_state.bf = -1;
 
 #ifdef WINRT_XBOX
-	m_features.primitive_id = false;
+	m_features.primitive_id = !GSConfig.DisablePrimitiveID;
 #else
 	m_features.primitive_id = true;
 #endif

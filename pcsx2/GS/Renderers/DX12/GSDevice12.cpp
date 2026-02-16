@@ -1258,7 +1258,7 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_features.multidraw_fb_copy = false;
 	m_features.broken_point_sampler = false;
 #ifdef WINRT_XBOX
-	m_features.primitive_id = false;
+	m_features.primitive_id = !GSConfig.DisablePrimitiveID;
 #else
 	m_features.primitive_id = true;
 #endif

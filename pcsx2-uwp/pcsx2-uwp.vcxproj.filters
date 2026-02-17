@@ -60,13 +60,13 @@
     <ClCompile Include="..\pcsx2\PrecompiledHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UWPKeyboard.cpp">
+    <ClCompile Include="src\UWPKeyboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UWPSound.cpp">
+    <ClCompile Include="src\UWPSound.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,10 +74,10 @@
     <ClInclude Include="..\pcsx2\PrecompiledHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UWPKeyboard.h">
+    <ClInclude Include="src\UWPKeyboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="UWPUtils.h">
+    <ClInclude Include="src\UWPUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

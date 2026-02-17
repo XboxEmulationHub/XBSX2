@@ -6,7 +6,7 @@
 #include "common/FileSystem.h"
 #include "common/Path.h"
 #include "pcsx2/Config.h"
-#include "pcsx2-uwp/UWPUtils.h"
+#include "UWPUtils.h"
 
 #include <winrt/base.h>
 #include <xaudio2.h>

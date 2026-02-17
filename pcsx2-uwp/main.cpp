@@ -1,16 +1,19 @@
 #include "pcsx2/PrecompiledHeader.h"
 
-#include <windows.h>
+#include "UWPKeyboard.h"
+
 #include <gamingdeviceinformation.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Globalization.h>
+#include <windows.h>
 #include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
-#include <winrt/Windows.UI.Core.h>
-#include <winrt/Windows.UI.ViewManagement.Core.h>
-#include <winrt/Windows.Graphics.Display.Core.h>
+#include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Gaming.Input.h>
+#include <winrt/Windows.Globalization.h>
+#include <winrt/Windows.Graphics.Display.Core.h>
 #include <winrt/Windows.System.h>
+#include <winrt/Windows.UI.Core.h>
+#include <winrt/Windows.UI.Input.h>
+#include <winrt/Windows.UI.ViewManagement.Core.h>
 
 #define SDL_MAIN_HANDLED
 #include <SDL3/SDL_main.h>
@@ -530,17 +533,17 @@ bool Host::LocaleCircleConfirm()
 
 std::optional<u32> InputManager::ConvertHostKeyboardStringToCode(const std::string_view str)
 {
-	return std::nullopt;
+	return UWPKeyboard::NameToCode(str);
 }
 
 std::optional<std::string> InputManager::ConvertHostKeyboardCodeToString(u32 code)
 {
-	return std::nullopt;
+	return UWPKeyboard::CodeToName(code);
 }
 
 const char* InputManager::ConvertHostKeyboardCodeToIcon(u32 code)
 {
-	return nullptr;
+	return UWPKeyboard::CodeToIcon(code);
 }
 
 std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
@@ -830,10 +833,20 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	void SetWindow(CoreWindow const& window)
 	{
 		window.CharacterReceived({this, &App::OnKeyInput});
+		window.KeyDown({this, &App::OnKeyDown});
+		window.KeyUp({this, &App::OnKeyUp});
+		window.PointerMoved({this, &App::OnPointerMoved});
+		window.PointerPressed({this, &App::OnPointerPressed});
+		window.PointerReleased({this, &App::OnPointerReleased});
+		window.PointerWheelChanged({this, &App::OnPointerWheelChanged});
+		window.SizeChanged({this, &App::OnSizeChanged});
 	}
 
 	void OnKeyInput(const IInspectable&, const winrt::Windows::UI::Core::CharacterReceivedEventArgs& args)
 	{
+		if (args.KeyCode() == L'\b')
+			return;
+
 		if (ImGuiManager::WantsTextInput())
 		{
 			MTGS::RunOnGSThread([c = args.KeyCode()]() {
@@ -843,6 +856,95 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 				ImGui::GetIO().AddInputCharacter(c);
 			});
 		}
+	}
+
+	void OnKeyDown(const IInspectable&, const winrt::Windows::UI::Core::KeyEventArgs& args)
+	{
+		if (args.KeyStatus().WasKeyDown)
+			return;
+
+		const u32 key = static_cast<u32>(args.VirtualKey());
+		// This is needed or else it will cause new binds to break
+		if (!UWPKeyboard::IsValidKey(key))
+			return;
+
+		Host::RunOnCPUThread([key]() {
+			InputManager::InvokeEvents(InputManager::MakeHostKeyboardKey(key), 1.0f);
+		});
+	}
+
+	void OnKeyUp(const IInspectable&, const winrt::Windows::UI::Core::KeyEventArgs& args)
+	{
+		const u32 key = static_cast<u32>(args.VirtualKey());
+		// This is needed or else it will cause new binds to break
+		if (!UWPKeyboard::IsValidKey(key))
+			return;
+
+		Host::RunOnCPUThread([key]() {
+			InputManager::InvokeEvents(InputManager::MakeHostKeyboardKey(key), 0.0f);
+		});
+	}
+
+	void OnPointerMoved(const IInspectable&, const winrt::Windows::UI::Core::PointerEventArgs& args)
+	{
+		const auto pos = args.CurrentPoint().Position();
+		const float scale = GetDisplayScale();
+		const float x = pos.X * scale;
+		const float y = pos.Y * scale;
+
+		Host::RunOnCPUThread([x, y]() {
+			InputManager::UpdatePointerAbsolutePosition(0, x, y);
+		});
+	}
+
+	void OnPointerButton(const winrt::Windows::UI::Core::PointerEventArgs& args, bool pressed)
+	{
+		using winrt::Windows::UI::Input::PointerUpdateKind;
+		const PointerUpdateKind kind = args.CurrentPoint().Properties().PointerUpdateKind();
+
+		u32 button = 0;
+		switch (kind)
+		{
+			case PointerUpdateKind::LeftButtonPressed:
+			case PointerUpdateKind::LeftButtonReleased:
+				button = 0;
+				break;
+			case PointerUpdateKind::RightButtonPressed:
+			case PointerUpdateKind::RightButtonReleased:
+				button = 1;
+				break;
+			case PointerUpdateKind::MiddleButtonPressed:
+			case PointerUpdateKind::MiddleButtonReleased:
+				button = 2;
+				break;
+			default:
+				return;
+		}
+
+		Host::RunOnCPUThread([button, pressed]() {
+			InputManager::InvokeEvents(InputManager::MakePointerButtonKey(0, button), pressed ? 1.0f : 0.0f);
+		});
+	}
+
+	void OnPointerPressed(const IInspectable&, const winrt::Windows::UI::Core::PointerEventArgs& args)
+	{
+		OnPointerButton(args, true);
+	}
+
+	void OnPointerReleased(const IInspectable&, const winrt::Windows::UI::Core::PointerEventArgs& args)
+	{
+		OnPointerButton(args, false);
+	}
+
+	void OnPointerWheelChanged(const IInspectable&, const winrt::Windows::UI::Core::PointerEventArgs& args)
+	{
+		const float wheel_delta = static_cast<float>(args.CurrentPoint().Properties().MouseWheelDelta()) / 120.0f;
+		if (wheel_delta == 0.0f)
+			return;
+
+		Host::RunOnCPUThread([wheel_delta]() {
+			InputManager::UpdatePointerRelativeDelta(0, InputPointerAxis::WheelY, wheel_delta);
+		});
 	}
 };
 

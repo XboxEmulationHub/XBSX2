@@ -29,6 +29,10 @@
 
 #if defined(_WIN32)
 #include "common/RedtapeWindows.h"
+#if defined(WINRT_XBOX)
+#include <winrt/Windows.ApplicationModel.h>
+#include <winrt/Windows.Storage.h>
+#endif
 #include <io.h>
 #include <malloc.h>
 #include <pathcch.h>
@@ -810,7 +814,7 @@ std::vector<std::string> FileSystem::GetRootDirectoryList()
 {
 	std::vector<std::string> results;
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(WINRT_XBOX)
 	char buf[256];
 	const DWORD size = GetLogicalDriveStringsA(sizeof(buf), buf);
 	if (size != 0 && size < (sizeof(buf) - 1))
@@ -823,6 +827,23 @@ std::vector<std::string> FileSystem::GetRootDirectoryList()
 			ptr += len + 1u;
 		}
 	}
+#elif defined(WINRT_XBOX)
+	const auto add_unique_if_not_empty = [&results](std::string path) {
+		if (path.empty() || std::find(results.begin(), results.end(), path) != results.end())
+			return;
+		results.emplace_back(std::move(path));
+	};
+
+	add_unique_if_not_empty(winrt::to_string(winrt::Windows::ApplicationModel::Package::Current().InstalledLocation().Path()));
+	add_unique_if_not_empty(winrt::to_string(winrt::Windows::Storage::ApplicationData::Current().LocalFolder().Path()));
+
+	// Drives:
+	// D:\ = Development drive,
+	// E:\ = External storage
+	if (FileSystem::DirectoryExists("D:\\"))
+		add_unique_if_not_empty("D:\\");
+	if (FileSystem::DirectoryExists("E:\\"))
+		add_unique_if_not_empty("E:\\");
 #else
 	const char* home_path = std::getenv("HOME");
 	if (home_path)

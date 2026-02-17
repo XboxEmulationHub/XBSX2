@@ -3,7 +3,7 @@
 
 #include "pcsx2/PrecompiledHeader.h"
 
-#include "pcsx2-uwp/UWPUtils.h"
+#include "UWPUtils.h"
 #include "pcsx2/Config.h"
 #include "common/FileSystem.h"
 #include "common/Path.h"

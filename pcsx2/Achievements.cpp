@@ -32,7 +32,7 @@
 #include "common/Timer.h"
 
 #ifdef WINRT_XBOX
-#include "pcsx2-uwp/UWPUtils.h"
+#include "pcsx2-uwp/src/UWPUtils.h"
 #endif
 
 #include "IconsPromptFont.h"

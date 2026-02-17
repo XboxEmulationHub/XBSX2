@@ -1,5 +1,7 @@
 #include "pcsx2/PrecompiledHeader.h"
 
+#include "UWPKeyboard.h"
+
 #include <windows.h>
 #include <gamingdeviceinformation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -530,17 +532,17 @@ bool Host::LocaleCircleConfirm()
 
 std::optional<u32> InputManager::ConvertHostKeyboardStringToCode(const std::string_view str)
 {
-	return std::nullopt;
+	return UWPKeyboard::NameToCode(str);
 }
 
 std::optional<std::string> InputManager::ConvertHostKeyboardCodeToString(u32 code)
 {
-	return std::nullopt;
+	return UWPKeyboard::CodeToName(code);
 }
 
 const char* InputManager::ConvertHostKeyboardCodeToIcon(u32 code)
 {
-	return nullptr;
+	return UWPKeyboard::CodeToIcon(code);
 }
 
 std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
@@ -830,11 +832,15 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	void SetWindow(CoreWindow const& window)
 	{
 		window.CharacterReceived({this, &App::OnKeyInput});
-
+		window.KeyDown({this, &App::OnKeyDown});
+		window.KeyUp({this, &App::OnKeyUp});
 	}
 
 	void OnKeyInput(const IInspectable&, const winrt::Windows::UI::Core::CharacterReceivedEventArgs& args)
 	{
+		if (args.KeyCode() == L'\b')
+			return;
+
 		if (ImGuiManager::WantsTextInput())
 		{
 			MTGS::RunOnGSThread([c = args.KeyCode()]() {
@@ -844,6 +850,31 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 				ImGui::GetIO().AddInputCharacter(c);
 			});
 		}
+	}
+
+	void OnKeyDown(const IInspectable&, const winrt::Windows::UI::Core::KeyEventArgs& args)
+	{
+		if (!ImGuiManager::WantsTextInput())
+			return;
+
+		if (args.KeyStatus().WasKeyDown)
+			return;
+
+		const u32 key = static_cast<u32>(args.VirtualKey());
+		Host::RunOnCPUThread([key]() {
+			InputManager::InvokeEvents(InputManager::MakeHostKeyboardKey(key), 1.0f);
+		});
+	}
+
+	void OnKeyUp(const IInspectable&, const winrt::Windows::UI::Core::KeyEventArgs& args)
+	{
+		if (!ImGuiManager::WantsTextInput())
+			return;
+
+		const u32 key = static_cast<u32>(args.VirtualKey());
+		Host::RunOnCPUThread([key]() {
+			InputManager::InvokeEvents(InputManager::MakeHostKeyboardKey(key), 0.0f);
+		});
 	}
 };
 

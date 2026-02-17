@@ -215,6 +215,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\pcsx2\PrecompiledHeader.h" />
+    <ClInclude Include="UWPKeyboard.h" />
     <ClInclude Include="UWPUtils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -225,6 +226,7 @@
   <ItemGroup>
     <ClCompile Include="..\pcsx2\PrecompiledHeader.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UWPKeyboard.cpp" />
     <ClCompile Include="UWPSound.cpp" />
   </ItemGroup>
   <ItemGroup>

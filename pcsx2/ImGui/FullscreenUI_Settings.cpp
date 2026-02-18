@@ -240,6 +240,18 @@ s32 FullscreenUI::GetEffectiveIntSetting(SettingsInterface* bsi, const char* sec
 	return Host::Internal::GetBaseSettingsLayer()->GetIntValue(section, key, default_value);
 }
 
+std::string FullscreenUI::GetEffectiveStringSetting(SettingsInterface* bsi, const char* section, const char* key, const char* default_value)
+{
+	if (IsEditingGameSettings(bsi))
+	{
+		std::string value = bsi->GetStringValue(section, key, "");
+		if (!value.empty())
+			return value;
+	}
+
+	return Host::Internal::GetBaseSettingsLayer()->GetStringValue(section, key, default_value);
+}
+
 void FullscreenUI::DrawInputBindingButton(
 	SettingsInterface* bsi, InputBindingInfo::Type type, const char* section, const char* name, const char* display_name, const char* icon_name, bool show_type)
 {
@@ -393,10 +405,17 @@ void FullscreenUI::BeginInputBinding(SettingsInterface* bsi, InputBindingInfo::T
 		const bool sdl_enabled = GetEffectiveBoolSetting(bsi, "InputSources", "SDL", true);
 		const bool xinput_enabled = GetEffectiveBoolSetting(bsi, "InputSources", "XInput", false);
 
-		if (sdl_enabled == xinput_enabled)
-			s_input_binding_controller_source_filter.reset();
-		else
+		if (!sdl_enabled || !xinput_enabled)
 			s_input_binding_controller_source_filter = sdl_enabled ? InputSourceType::SDL : InputSourceType::XInput;
+		else
+		{
+			const std::string preferred = GetEffectiveStringSetting(bsi, "InputSources", "PreferredControllerSource", "SDL");
+			const std::optional<InputSourceType> st = InputManager::ParseInputSourceString(preferred);
+			if (st == InputSourceType::SDL || st == InputSourceType::XInput)
+				s_input_binding_controller_source_filter = st.value();
+			else
+				s_input_binding_controller_source_filter = InputSourceType::SDL;
+		}
 	}
 #endif
 
@@ -5187,6 +5206,15 @@ void FullscreenUI::DrawControllerSettingsPage()
 		FSUI_CSTR("The XInput source provides support for XBox 360/XBox One/XBox Series controllers."), "InputSources", "XInput", false,
 		true, false);
 #endif
+#if defined(WINRT_XBOX)
+	static constexpr const char* s_preferred_controller_source_names[] = {"SDL", "XInput"};
+	static constexpr const char* s_preferred_controller_source_values[] = {"SDL", "XInput"};
+	DrawStringListSetting(bsi, FSUI_ICONSTR(ICON_FA_GAMEPAD, "Preferred Controller Source"),
+		FSUI_CSTR("When SDL and XInput are both enabled, new bindings use this source."),
+		"InputSources", "PreferredControllerSource", "SDL", s_preferred_controller_source_names, s_preferred_controller_source_values,
+		std::size(s_preferred_controller_source_values), false,
+		bsi->GetBoolValue("InputSources", "SDL", true) && bsi->GetBoolValue("InputSources", "XInput", false));
+#endif
 
 #if defined(WINRT_XBOX)
 	// Don't allow disabling all controller input sources.
@@ -6275,6 +6303,7 @@ TRANSLATE_NOOP("FullscreenUI", "Provides vibration and LED control support over 
 TRANSLATE_NOOP("FullscreenUI", "Enable/Disable the Player LED on DualSense controllers.");
 TRANSLATE_NOOP("FullscreenUI", "Allow SDL to use raw access to input devices.");
 TRANSLATE_NOOP("FullscreenUI", "The XInput source provides support for XBox 360/XBox One/XBox Series controllers.");
+TRANSLATE_NOOP("FullscreenUI", "When SDL and XInput are both enabled, new bindings use this source.");
 TRANSLATE_NOOP("FullscreenUI", "Multitap");
 TRANSLATE_NOOP("FullscreenUI", "Enables an additional three controller slots. Not supported in all games.");
 TRANSLATE_NOOP("FullscreenUI", "Attempts to map the selected port to a chosen controller.");
@@ -6617,9 +6646,10 @@ TRANSLATE_NOOP("FullscreenUI", "Medium (Recommended)");
 TRANSLATE_NOOP("FullscreenUI", "Very High (Slow, Not Recommended)");
 TRANSLATE_NOOP("FullscreenUI", "Clear Binding");
 TRANSLATE_NOOP("FullscreenUI", "Default");
+TRANSLATE_NOOP("FullscreenUI", "Open Keyboard");
+TRANSLATE_NOOP("FullscreenUI", "Select");
 TRANSLATE_NOOP("FullscreenUI", "Change Page");
 TRANSLATE_NOOP("FullscreenUI", "Navigate");
-TRANSLATE_NOOP("FullscreenUI", "Select");
 TRANSLATE_NOOP("FullscreenUI", "Back");
 TRANSLATE_NOOP("FullscreenUI", "Frequency");
 TRANSLATE_NOOP("FullscreenUI", "Set Input Binding");
@@ -6875,6 +6905,7 @@ TRANSLATE_NOOP("FullscreenUI", "DualShock 4 / DualSense Enhanced Mode");
 TRANSLATE_NOOP("FullscreenUI", "Enable DualSense Player LED");
 TRANSLATE_NOOP("FullscreenUI", "Enable SDL Raw Input");
 TRANSLATE_NOOP("FullscreenUI", "Enable XInput Input Source");
+TRANSLATE_NOOP("FullscreenUI", "Preferred Controller Source");
 TRANSLATE_NOOP("FullscreenUI", "Multitap on Console Port 1");
 TRANSLATE_NOOP("FullscreenUI", "Multitap on Console Port 2");
 TRANSLATE_NOOP("FullscreenUI", "Controller Port {}{}");

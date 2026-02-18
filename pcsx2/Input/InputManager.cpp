@@ -726,19 +726,22 @@ bool InputManager::GetInputSourceDefaultEnabled(InputSourceType type)
 {
 	switch (type)
 	{
-#if !defined(WINRT_XBOX)
 		case InputSourceType::Keyboard:
 		case InputSourceType::Pointer:
+			return true;
+
+#if defined(_WIN32)
+#if !defined(WINRT_XBOX)
+		case InputSourceType::DInput:
+			return false;
 #endif
 		case InputSourceType::SDL:
 			return true;
 
-#if defined(_WIN32) && !defined(WINRT_XBOX)
-		case InputSourceType::DInput:
-			return false;
-#endif
 		case InputSourceType::XInput:
 			return false;
+#endif
+
 		default:
 			return false;
 	}

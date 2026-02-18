@@ -8756,8 +8756,18 @@ void FullscreenUI::DrawAboutWindow()
 
 		DrawListSvgTexture(ImGui::GetWindowDrawList(), s_banner_texture.get(), image_rect.Min, image_rect.Max);
 
-		const float indent = image_size.y + LayoutScale(12.0f);
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + indent);
+		SmallString version_text;
+#ifdef WINRT_XBOX
+		version_text.sprintf(FSUI_CSTR("v%s • PCSX2 2.6.3"), APP_VERSION);
+#else
+		version_text.sprintf(FSUI_CSTR("v%s • PCSX2 2.6.3"), BuildVersion::GitRev);
+#endif
+		const float text_width = ImGui::CalcTextSize(version_text.c_str()).x;
+		const float centered_x = (ImGui::GetWindowSize().x - text_width) * 0.5f;
+		const float local_y = image_rect.Max.y - ImGui::GetWindowPos().y;
+		ImGui::SetCursorPos(ImVec2(centered_x, local_y + LayoutScale(14.0f)));
+		ImGui::TextUnformatted(version_text.c_str());
+
 		ImGui::TextWrapped("%s", FSUI_CSTR(
 									 "XBSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a "
 									 "combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. "
@@ -8771,12 +8781,9 @@ void FullscreenUI::DrawAboutWindow()
 		ImGui::NewLine();
 
 		ImGui::TextWrapped("Credits:");
-
-		ImGui::TextWrapped("Thank you to the PCSX2 team for their hard work on the PCSX2 project.");
-
-		ImGui::TextWrapped("Thank you to SirMangler, and TRW/TheRhysWyrill for porting PCSX2 to UWP.");
-
-		ImGui::TextWrapped("Thank you to Rockso/Redhood/fffathur for help with assets like the App Icon/Banner.");
+		ImGui::BulletText("%s", FSUI_CSTR("PCSX2 - For the base PS2 emulation with great performance"));
+		ImGui::BulletText("%s", FSUI_CSTR("SirMangler / TheRhysWyrill - For rewriting PCSX2 for UWP"));
+		ImGui::BulletText("%s", FSUI_CSTR("Rockso85 / redhood1337 / fffathur - For asset support"));
 
 		ImGui::NewLine();
 
@@ -8804,14 +8811,6 @@ void FullscreenUI::DrawAboutWindow()
 		}
 
 		EndMenuButtons();
-
-		const float alignment = image_size.x + image_size.y;
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + alignment);
-#ifdef WINRT_XBOX
-		ImGui::TextWrapped(FSUI_CSTR("Version: %s"), APP_VERSION);
-#else
-		ImGui::TextWrapped(FSUI_CSTR("Version: %s"), BuildVersion::GitRev);
-#endif
 
 		ImGui::EndPopup();
 	}
@@ -9976,9 +9975,12 @@ TRANSLATE_NOOP("FullscreenUI", "Downloads covers from a user-specified URL templ
 TRANSLATE_NOOP("FullscreenUI", "Identifies any new files added to the game directories.");
 TRANSLATE_NOOP("FullscreenUI", "Forces a full rescan of all games previously identified.");
 TRANSLATE_NOOP("FullscreenUI", "About XBSX2");
+TRANSLATE_NOOP("FullscreenUI", "v%s • PCSX2 2.6.3");
 TRANSLATE_NOOP("FullscreenUI", "XBSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. This allows you to play PS2 games on your PC, with many additional features and benefits.");
 TRANSLATE_NOOP("FullscreenUI", "PlayStation 2 and PS2 are registered trademarks of Sony Interactive Entertainment. This application is not affiliated in any way with Sony Interactive Entertainment.");
-TRANSLATE_NOOP("FullscreenUI", "Version: %s");
+TRANSLATE_NOOP("FullscreenUI", "PCSX2 - For the base PS2 emulation with great performance");
+TRANSLATE_NOOP("FullscreenUI", "SirMangler / TheRhysWyrill - For rewriting PCSX2 for UWP");
+TRANSLATE_NOOP("FullscreenUI", "Rockso85 / redhood1337 / fffathur - For asset support");
 TRANSLATE_NOOP("FullscreenUI", "RetroAchievements");
 TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead.");
 TRANSLATE_NOOP("FullscreenUI", "Username");

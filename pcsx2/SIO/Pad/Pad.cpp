@@ -169,6 +169,10 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 	}
 	si.SetBoolValue("InputSources", "SDLControllerEnhancedMode", true);
 	si.SetBoolValue("InputSources", "SDLPS5PlayerLED", true);
+#if defined(WINRT_XBOX)
+	if (!si.ContainsValue("InputSources", "PreferredControllerSource"))
+		si.SetStringValue("InputSources", "PreferredControllerSource", "SDL");
+#endif
 	si.SetBoolValue("Pad", "MultitapPort1", false);
 	si.SetBoolValue("Pad", "MultitapPort2", false);
 	si.SetFloatValue("Pad", "PointerXScale", 8.0f);
@@ -213,34 +217,14 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 #if !defined(WINRT_XBOX)
 	MapController(si, 0, InputManager::GetGenericBindingMapping("Keyboard"));
 #else
-	const std::string section = GetConfigSection(0);
-	si.SetStringValue(section.c_str(), "Up", "SDL-0/DPadUp");
-	si.SetStringValue(section.c_str(), "Right", "SDL-0/DPadRight");
-	si.SetStringValue(section.c_str(), "Down", "SDL-0/DPadDown");
-	si.SetStringValue(section.c_str(), "Left", "SDL-0/DPadLeft");
-	si.SetStringValue(section.c_str(), "Triangle", "SDL-0/FaceNorth");
-	si.SetStringValue(section.c_str(), "Circle", "SDL-0/FaceEast");
-	si.SetStringValue(section.c_str(), "Cross", "SDL-0/FaceSouth");
-	si.SetStringValue(section.c_str(), "Square", "SDL-0/FaceWest");
-	si.SetStringValue(section.c_str(), "Select", "SDL-0/Back");
-	si.SetStringValue(section.c_str(), "Start", "SDL-0/Start");
-	si.SetStringValue(section.c_str(), "L1", "SDL-0/LeftShoulder");
-	si.SetStringValue(section.c_str(), "L2", "SDL-0/+LeftTrigger");
-	si.SetStringValue(section.c_str(), "R1", "SDL-0/RightShoulder");
-	si.SetStringValue(section.c_str(), "R2", "SDL-0/+RightTrigger");
-	si.SetStringValue(section.c_str(), "L3", "SDL-0/LeftStick");
-	si.SetStringValue(section.c_str(), "R3", "SDL-0/RightStick");
-	si.SetStringValue(section.c_str(), "LUp", "SDL-0/-LeftY");
-	si.SetStringValue(section.c_str(), "LRight", "SDL-0/+LeftX");
-	si.SetStringValue(section.c_str(), "LDown", "SDL-0/+LeftY");
-	si.SetStringValue(section.c_str(), "LLeft", "SDL-0/-LeftX");
-	si.SetStringValue(section.c_str(), "RUp", "SDL-0/-RightY");
-	si.SetStringValue(section.c_str(), "RRight", "SDL-0/+RightX");
-	si.SetStringValue(section.c_str(), "RDown", "SDL-0/+RightY");
-	si.SetStringValue(section.c_str(), "RLeft", "SDL-0/-RightX");
-	si.SetStringValue(section.c_str(), "Analog", "SDL-0/Guide");
-	si.SetStringValue(section.c_str(), "LargeMotor", "SDL-0/LargeMotor");
-	si.SetStringValue(section.c_str(), "SmallMotor", "SDL-0/SmallMotor");
+	const std::string preferred = si.GetStringValue("InputSources", "PreferredControllerSource", "SDL");
+	const std::string prefix = (preferred == "XInput") ? "XInput" : "SDL";
+
+	MapController(si, 0, InputManager::GetGenericBindingMapping(fmt::format("{}-0", prefix))); // Port 1 / 1A
+	MapController(si, 1, InputManager::GetGenericBindingMapping(fmt::format("{}-1", prefix))); // Port 2 / 2A
+	MapController(si, 2, InputManager::GetGenericBindingMapping(fmt::format("{}-2", prefix))); // Port 1B
+	MapController(si, 3, InputManager::GetGenericBindingMapping(fmt::format("{}-3", prefix))); // Port 1C
+	MapController(si, 4, InputManager::GetGenericBindingMapping(fmt::format("{}-4", prefix))); // Port 1D
 #endif
 }
 
@@ -288,7 +272,9 @@ void Pad::SetDefaultHotkeyConfig(SettingsInterface& si)
 #if !defined(WINRT_XBOX)
 	si.SetStringValue("Hotkeys", "OpenPauseMenu", "Keyboard/Escape");
 #else
-	si.SetStringValue("Hotkeys", "OpenPauseMenu", "SDL-0/LeftStick & SDL-0/RightStick");
+	const std::string preferred = si.GetStringValue("InputSources", "PreferredControllerSource", "SDL");
+	const std::string prefix = (preferred == "XInput") ? "XInput" : "SDL";
+	si.SetStringValue("Hotkeys", "OpenPauseMenu", fmt::format("{}-0/LeftStick & {}-0/RightStick", prefix, prefix).c_str());
 #endif
 	si.SetStringValue("Hotkeys", "ToggleFrameLimit", "Keyboard/F4");
 	si.SetStringValue("Hotkeys", "TogglePause", "Keyboard/Space");
@@ -380,6 +366,9 @@ void Pad::CopyConfiguration(SettingsInterface* dest_si, const SettingsInterface&
 		}
 		dest_si->CopyBoolValue(src_si, "InputSources", "SDLControllerEnhancedMode");
 		dest_si->CopyBoolValue(src_si, "InputSources", "SDLPS5PlayerLED");
+#if defined(WINRT_XBOX)
+		dest_si->CopyStringValue(src_si, "InputSources", "PreferredControllerSource");
+#endif
 	}
 
 	for (u32 port = 0; port < Pad::NUM_CONTROLLER_PORTS; port++)

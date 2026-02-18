@@ -429,6 +429,7 @@ namespace FullscreenUI
 	void SetSettingsChanged(SettingsInterface* bsi);
 	bool GetEffectiveBoolSetting(SettingsInterface* bsi, const char* section, const char* key, bool default_value);
 	s32 GetEffectiveIntSetting(SettingsInterface* bsi, const char* section, const char* key, s32 default_value);
+	std::string GetEffectiveStringSetting(SettingsInterface* bsi, const char* section, const char* key, const char* default_value);
 	void DoCopyGameSettings();
 	void DoClearGameSettings();
 	void ResetControllerSettings();

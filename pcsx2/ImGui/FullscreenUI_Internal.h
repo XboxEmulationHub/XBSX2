@@ -74,6 +74,9 @@ using ImGuiFullscreen::GetCachedTexture;
 using ImGuiFullscreen::GetCachedTextureAsync;
 using ImGuiFullscreen::GamepadGlyphs;
 using ImGuiFullscreen::GetGamepadGlyphs;
+#if defined(WINRT_XBOX)
+using ImGuiFullscreen::GetOpenKeyboardButtonIcon;
+#endif
 using ImGuiFullscreen::GetLineHeight;
 using ImGuiFullscreen::GetPlaceholderTexture;
 using ImGuiFullscreen::GetQueuedFocusResetType;
@@ -525,6 +528,7 @@ namespace FullscreenUI
 	inline Common::Timer s_input_binding_timer;
 #if defined(WINRT_XBOX)
 	inline std::optional<InputSourceType> s_input_binding_controller_source_filter;
+	inline bool s_replace_settings_select_with_open_keyboard = false;
 #endif
 	inline bool s_prefer_english_titles;
 

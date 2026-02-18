@@ -996,6 +996,14 @@ ImGuiFullscreen::GamepadGlyphs ImGuiFullscreen::GetGamepadGlyphs()
 	};
 }
 
+#if defined(WINRT_XBOX)
+const char* ImGuiFullscreen::GetOpenKeyboardButtonIcon()
+{
+	const auto glyphs = GetGamepadGlyphs();
+	return ImGuiManager::IsGamepadNorthWestSwapped() ? glyphs.west : glyphs.north;
+}
+#endif
+
 void ImGuiFullscreen::CreateFooterTextString(SmallStringBase& dest,
 	std::span<const std::pair<const char*, std::string_view>> items)
 {
@@ -2683,6 +2691,9 @@ void ImGuiFullscreen::DrawInputDialog()
 	ImGui::PushStyleColor(ImGuiCol_PopupBg, UIPopupBackgroundColor);
 
 	bool is_open = true;
+#if defined(WINRT_XBOX)
+	bool input_box_active = false;
+#endif
 	if (ImGui::BeginPopupModal(s_input_dialog_title.c_str(), &is_open,
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar))
 	{
@@ -2746,6 +2757,9 @@ void ImGuiFullscreen::DrawInputDialog()
 		ImGui::InputText("##input", &s_input_dialog_text, flags,
 			(s_input_dialog_filter_type != InputFilterType::None) ? input_callback : nullptr,
 			(s_input_dialog_filter_type != InputFilterType::None) ? static_cast<void*>(&s_input_dialog_filter_type) : nullptr);
+#if defined(WINRT_XBOX)
+		input_box_active = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
+#endif
 
 		ImGui::PopStyleColor(5);
 		ImGui::PopStyleVar(3);
@@ -2778,7 +2792,11 @@ void ImGuiFullscreen::DrawInputDialog()
 	if (!is_open)
 		CloseInputDialog();
 	else
+#if !defined(WINRT_XBOX)
 		GetInputDialogHelpText(s_fullscreen_footer_text);
+#else
+		GetInputDialogHelpText(s_fullscreen_footer_text, input_box_active);
+#endif
 
 	ImGui::PopStyleColor(4);
 	ImGui::PopStyleVar(4);

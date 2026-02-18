@@ -128,22 +128,33 @@ void ImGuiFullscreen::GetFileSelectorHelpText(SmallStringBase& dest)
 	}
 }
 
-void ImGuiFullscreen::GetInputDialogHelpText(SmallStringBase& dest)
+void ImGuiFullscreen::GetInputDialogHelpText(SmallStringBase& dest, bool input_focused)
 {
 	if (IsGamepadInputSource())
 	{
 		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
 		const auto glyphs = GetGamepadGlyphs();
+#if defined(WINRT_XBOX)
+		const char* select_icon = input_focused ? GetOpenKeyboardButtonIcon() : glyphs.confirm(circleOK);
+		const std::string_view select_text = input_focused ? FSUI_VSTR("Open Keyboard") : FSUI_VSTR("Select");
+		CreateFooterTextString(dest, std::array{
+										 std::make_pair(select_icon, select_text),
+										 std::make_pair(glyphs.cancel(circleOK), FSUI_VSTR("Cancel")),
+									 });
+#else
 		CreateFooterTextString(dest, std::array{
 										 std::make_pair(ICON_PF_KEYBOARD, FSUI_VSTR("Enter Value")),
 										 std::make_pair(glyphs.confirm(circleOK), FSUI_VSTR("Select")),
 										 std::make_pair(glyphs.cancel(circleOK), FSUI_VSTR("Cancel")),
 									 });
+#endif
 	}
 	else
 	{
 		CreateFooterTextString(dest, std::array{
+#if !defined(WINRT_XBOX)
 										 std::make_pair(ICON_PF_KEYBOARD, FSUI_VSTR("Enter Value")),
+#endif
 										 std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
 										 std::make_pair(ICON_PF_ESC, FSUI_VSTR("Cancel")),
 									 });

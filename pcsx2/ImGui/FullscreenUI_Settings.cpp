@@ -699,6 +699,9 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 
 		s32 dlg_value = static_cast<s32>(value.value_or(default_value));
 		bool dlg_value_changed = false;
+#if defined(WINRT_XBOX)
+		bool show_open_keyboard_hint = false;
+#endif
 
 		char str_value[32];
 		std::snprintf(str_value, std::size(str_value), format, dlg_value);
@@ -723,7 +726,9 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 				dlg_value_changed = (dlg_value != new_value);
 				dlg_value = new_value;
 			}
-
+#if defined(WINRT_XBOX)
+			show_open_keyboard_hint = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
+#endif
 			ImGui::PopStyleColor(5);
 			ImGui::PopStyleVar(3);
 
@@ -770,6 +775,11 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 
 			ImGui::SetCursorPosY(button_pos.y + (padding.y * 2.0f) + LayoutScale(LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY + 10.0f));
 		}
+
+#if defined(WINRT_XBOX)
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
+#endif
 
 		if (dlg_value_changed)
 		{
@@ -902,6 +912,9 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 
 		float dlg_value = value.value_or(default_value) * multiplier;
 		bool dlg_value_changed = false;
+#if defined(WINRT_XBOX)
+		bool show_open_keyboard_hint = false;
+#endif
 
 		char str_value[32];
 		std::snprintf(str_value, std::size(str_value), format, dlg_value);
@@ -931,7 +944,9 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 				dlg_value_changed = (dlg_value != new_value);
 				dlg_value = new_value;
 			}
-
+#if defined(WINRT_XBOX)
+			show_open_keyboard_hint = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
+#endif
 			ImGui::PopStyleColor(4);
 			ImGui::PopStyleVar(2);
 
@@ -979,6 +994,10 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 			ImGui::SetCursorPosY(button_pos.y + (padding.y * 2.0f) + LayoutScale(LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY + 10.0f));
 		}
 
+#if defined(WINRT_XBOX)
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
+#endif
 		if (dlg_value_changed)
 		{
 			dlg_value = std::clamp(dlg_value / multiplier, min_value, max_value);
@@ -1070,7 +1089,9 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 		};
 
 		BeginMenuButtons();
-
+#if defined(WINRT_XBOX)
+		bool show_open_keyboard_hint = false;
+#endif
 		const ImVec2& padding(ImGui::GetStyle().FramePadding);
 
 		for (u32 i = 0; i < std::size(labels); i++)
@@ -1115,7 +1136,9 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 					dlg_value_changed = (dlg_value != new_value);
 					dlg_value = new_value;
 				}
-
+#if defined(WINRT_XBOX)
+				show_open_keyboard_hint |= (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
+#endif
 				ImGui::PopStyleColor(5);
 				ImGui::PopStyleVar(3);
 
@@ -1170,6 +1193,11 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 
 			ImGui::PopID();
 		}
+
+#if defined(WINRT_XBOX)
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
+#endif
 
 		if (MenuButtonWithoutSummary(FSUI_CSTR("OK"), true, LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY, g_large_font, ImVec2(0.5f, 0.0f)))
 		{
@@ -1951,6 +1979,9 @@ void FullscreenUI::DrawSettingsWindow()
 			ImGui::SetNextWindowScroll(ImVec2(0.0f, 0.0f));
 		}
 
+#if defined(WINRT_XBOX)
+	s_replace_settings_select_with_open_keyboard = false;
+#endif
 	if (BeginFullscreenWindow(
 			ImVec2(0.0f, heading_size.y),
 			ImVec2(io.DisplaySize.x, io.DisplaySize.y - heading_size.y - LayoutScale(LAYOUT_FOOTER_HEIGHT)),
@@ -2046,10 +2077,20 @@ void FullscreenUI::DrawSettingsWindow()
 	{
 		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
 		const auto glyphs = GetGamepadGlyphs();
+#if defined(WINRT_XBOX)
+		const char* select_icon =
+			s_replace_settings_select_with_open_keyboard ? GetOpenKeyboardButtonIcon() : glyphs.confirm(circleOK);
+		const std::string_view select_text =
+			s_replace_settings_select_with_open_keyboard ? FSUI_VSTR("Open Keyboard") : FSUI_VSTR("Select");
+#endif
 		SetFullscreenFooterText(std::array{
 			std::make_pair(glyphs.dpad_lr, FSUI_VSTR("Change Page")),
 			std::make_pair(glyphs.dpad_ud, FSUI_VSTR("Navigate")),
+#if !defined(WINRT_XBOX)
 			std::make_pair(glyphs.confirm(circleOK), FSUI_VSTR("Select")),
+#else
+			std::make_pair(select_icon, select_text),
+#endif
 			std::make_pair(glyphs.cancel(circleOK), FSUI_VSTR("Back")),
 		});
 	}

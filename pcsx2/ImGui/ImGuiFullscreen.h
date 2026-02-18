@@ -326,7 +326,10 @@ namespace ImGuiFullscreen
 	// Message callbacks.
 	void GetChoiceDialogHelpText(SmallStringBase& dest);
 	void GetFileSelectorHelpText(SmallStringBase& dest);
-	void GetInputDialogHelpText(SmallStringBase& dest);
+	void GetInputDialogHelpText(SmallStringBase& dest, bool input_focused = false);
+#if defined(WINRT_XBOX)
+	const char* GetOpenKeyboardButtonIcon();
+#endif
 } // namespace ImGuiFullscreen
 
 // Host UI triggers from Big Picture mode.

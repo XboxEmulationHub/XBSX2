@@ -1294,31 +1294,63 @@ void FullscreenUI::Render()
 	{
 		if (s_game_settings_interface)
 		{
-			Error error;
-			s_game_settings_interface->RemoveEmptySections();
-
-			if (s_game_settings_interface->IsEmpty())
-			{
-				if (FileSystem::FileExists(s_game_settings_interface->GetFileName().c_str()) &&
-					!FileSystem::DeleteFilePath(s_game_settings_interface->GetFileName().c_str(), &error))
+			Host::RunOnCPUThread([]() {
+				try
 				{
-					ImGuiFullscreen::OpenInfoMessageDialog(
-						FSUI_STR("Error"), fmt::format(FSUI_FSTR("An error occurred while deleting empty game settings:\n{}"),
-											   error.GetDescription()));
-				}
-			}
-			else
-			{
-				if (!s_game_settings_interface->Save(&error))
-				{
-					ImGuiFullscreen::OpenInfoMessageDialog(
-						FSUI_STR("Error"),
-						fmt::format(FSUI_FSTR("An error occurred while saving game settings:\n{}"), error.GetDescription()));
-				}
-			}
+					if (!s_game_settings_interface)
+						return;
+					Error error;
+					s_game_settings_interface->RemoveEmptySections();
 
-			if (VMManager::HasValidVM())
-				Host::RunOnCPUThread([]() { VMManager::ReloadGameSettings(); });
+					if (s_game_settings_interface->IsEmpty())
+					{
+						std::string path(s_game_settings_interface->GetFileName());
+						if (FileSystem::FileExists(path.c_str()) && !FileSystem::DeleteFilePath(path.c_str(), &error))
+						{
+							std::string msg(error.GetDescription());
+							MTGS::RunOnGSThread([msg]() {
+								ImGuiFullscreen::OpenInfoMessageDialog(
+									FSUI_STR("Error"),
+									fmt::format(FSUI_FSTR("An error occurred while deleting empty game settings:\n{}"), msg));
+							});
+							return;
+						}
+					}
+					else
+					{
+						if (!s_game_settings_interface->Save(&error))
+						{
+							std::string msg(error.GetDescription());
+							MTGS::RunOnGSThread([msg]() {
+								ImGuiFullscreen::OpenInfoMessageDialog(
+									FSUI_STR("Error"),
+									fmt::format(FSUI_FSTR("An error occurred while saving game settings:\n{}"), msg));
+							});
+							return;
+						}
+					}
+
+					if (VMManager::HasValidVM())
+						VMManager::ReloadGameSettings();
+				}
+				catch (const std::exception& e)
+				{
+					std::string msg(e.what());
+					MTGS::RunOnGSThread([msg]() {
+						ImGuiFullscreen::OpenInfoMessageDialog(
+							FSUI_STR("Error"),
+							fmt::format(FSUI_FSTR("Failed to apply game settings:\n{}"), msg));
+					});
+				}
+				catch (...)
+				{
+					MTGS::RunOnGSThread([]() {
+						ImGuiFullscreen::OpenInfoMessageDialog(
+							FSUI_STR("Error"),
+							FSUI_STR("Failed to apply game settings (unknown error)."));
+					});
+				}
+			});
 		}
 		s_game_settings_changed.store(false, std::memory_order_release);
 	}
@@ -9470,6 +9502,7 @@ void FullscreenUI::ReportStateSaveError(const std::string& message, std::optiona
 #if 0
 // TRANSLATION-STRING-AREA-BEGIN
 TRANSLATE_NOOP("FullscreenUI", "Error");
+TRANSLATE_NOOP("FullscreenUI", "Failed to apply game settings (unknown error).");
 TRANSLATE_NOOP("FullscreenUI", "Could not find any CD/DVD-ROM devices. Please ensure you have a drive connected and sufficient permissions to access it.");
 TRANSLATE_NOOP("FullscreenUI", "Your memory card is still saving data.\n\nWARNING: Shutting down now can IRREVERSIBLY CORRUPT YOUR MEMORY CARD.\n\nYou are strongly advised to select 'No' and let the save finish.\n\nDo you want to shutdown anyway and IRREVERSIBLY CORRUPT YOUR MEMORY CARD?");
 TRANSLATE_NOOP("FullscreenUI", "Use Global Setting");
@@ -9973,6 +10006,7 @@ TRANSLATE_NOOP("FullscreenUI", "Logs in to RetroAchievements.");
 TRANSLATE_NOOP("FullscreenUI", "Current Game");
 TRANSLATE_NOOP("FullscreenUI", "An error occurred while deleting empty game settings:\n{}");
 TRANSLATE_NOOP("FullscreenUI", "An error occurred while saving game settings:\n{}");
+TRANSLATE_NOOP("FullscreenUI", "Failed to apply game settings:\n{}");
 TRANSLATE_NOOP("FullscreenUI", "{} is not a valid disc image.");
 TRANSLATE_NOOP("FullscreenUI", "{:%H:%M}");
 TRANSLATE_NOOP("FullscreenUI", "{0}/{1}/{2}/{3}");

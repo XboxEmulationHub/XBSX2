@@ -615,6 +615,8 @@ namespace FullscreenUI
 	static std::vector<std::pair<InputBindingKey, std::pair<float, float>>> s_input_binding_value_ranges;
 	static std::optional<InputSourceType> s_input_binding_controller_source_filter;
 	static Common::Timer s_input_binding_timer;
+	static bool s_replace_settings_select_with_open_keyboard = false;
+
 
 	//////////////////////////////////////////////////////////////////////////
 	// Save State List
@@ -774,13 +776,19 @@ void ImGuiFullscreen::GetFileSelectorHelpText(SmallStringBase& dest)
 	}
 }
 
+static const char* GetOpenKeyboardButtonIcon()
+{
+	return ImGuiManager::IsGamepadNorthWestSwapped() ? ICON_PF_BUTTON_SQUARE : ICON_PF_BUTTON_TRIANGLE;
+}
+
 void ImGuiFullscreen::GetInputDialogHelpText(SmallStringBase& dest)
 {
 	if (IsGamepadInputSource())
 	{
 		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+		const char* keyboard_button = GetOpenKeyboardButtonIcon();
 		CreateFooterTextString(dest, std::array{
-										 std::make_pair(ICON_PF_KEYBOARD, FSUI_VSTR("Enter Value")),
+										 std::make_pair(keyboard_button, FSUI_VSTR("Open Keyboard")),
 										 std::make_pair(circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS, FSUI_VSTR("Select")),
 										 std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Cancel")),
 									 });
@@ -2659,6 +2667,7 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 
 		s32 dlg_value = static_cast<s32>(value.value_or(default_value));
 		bool dlg_value_changed = false;
+		bool show_open_keyboard_hint = false;
 
 		char str_value[32];
 		std::snprintf(str_value, std::size(str_value), format, dlg_value);
@@ -2674,6 +2683,7 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 				dlg_value_changed = (dlg_value != new_value);
 				dlg_value = new_value;
 			}
+			show_open_keyboard_hint = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + LayoutScale(10.0f));
 		}
@@ -2718,6 +2728,9 @@ void FullscreenUI::DrawIntSpinBoxSetting(SettingsInterface* bsi, const char* tit
 
 			ImGui::SetCursorPosY(button_pos.y + (padding.y * 2.0f) + LayoutScale(LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY + 10.0f));
 		}
+
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
 
 		if (dlg_value_changed)
 		{
@@ -2835,6 +2848,7 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 
 		float dlg_value = value.value_or(default_value) * multiplier;
 		bool dlg_value_changed = false;
+		bool show_open_keyboard_hint = false;
 
 		char str_value[32];
 		std::snprintf(str_value, std::size(str_value), format, dlg_value);
@@ -2857,6 +2871,7 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 				dlg_value_changed = (dlg_value != new_value);
 				dlg_value = new_value;
 			}
+			show_open_keyboard_hint = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + LayoutScale(10.0f));
 		}
@@ -2901,6 +2916,9 @@ void FullscreenUI::DrawFloatSpinBoxSetting(SettingsInterface* bsi, const char* t
 
 			ImGui::SetCursorPosY(button_pos.y + (padding.y * 2.0f) + LayoutScale(LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY + 10.0f));
 		}
+
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
 
 		if (dlg_value_changed)
 		{
@@ -2993,6 +3011,7 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 		};
 
 		BeginMenuButtons();
+		bool show_open_keyboard_hint = false;
 
 		const ImVec2& padding(ImGui::GetStyle().FramePadding);
 
@@ -3029,6 +3048,7 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 					dlg_value_changed = (dlg_value != new_value);
 					dlg_value = new_value;
 				}
+				show_open_keyboard_hint |= (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + LayoutScale(10.0f));
 			}
@@ -3081,6 +3101,9 @@ void FullscreenUI::DrawIntRectSetting(SettingsInterface* bsi, const char* title,
 
 			ImGui::PopID();
 		}
+
+		if (show_open_keyboard_hint)
+			s_replace_settings_select_with_open_keyboard = true;
 
 		if (MenuButtonWithoutSummary(FSUI_CSTR("OK"), true, LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY, g_large_font, ImVec2(0.5f, 0.0f)))
 		{
@@ -3847,6 +3870,7 @@ void FullscreenUI::DrawSettingsWindow()
 			ImGui::SetNextWindowScroll(ImVec2(0.0f, 0.0f));
 		}
 
+	s_replace_settings_select_with_open_keyboard = false;
 	if (BeginFullscreenWindow(
 			ImVec2(0.0f, heading_size.y),
 			ImVec2(io.DisplaySize.x, io.DisplaySize.y - heading_size.y - LayoutScale(LAYOUT_FOOTER_HEIGHT)),
@@ -3937,10 +3961,14 @@ void FullscreenUI::DrawSettingsWindow()
 	if (IsGamepadInputSource())
 	{
 		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+		const char* select_icon =
+			s_replace_settings_select_with_open_keyboard ? GetOpenKeyboardButtonIcon() : (circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS);
+		const std::string_view select_text =
+			s_replace_settings_select_with_open_keyboard ? FSUI_VSTR("Open Keyboard") : FSUI_VSTR("Select");
 		SetFullscreenFooterText(std::array{
 			std::make_pair(ICON_PF_DPAD_LEFT_RIGHT, FSUI_VSTR("Change Page")),
 			std::make_pair(ICON_PF_DPAD_UP_DOWN, FSUI_VSTR("Navigate")),
-			std::make_pair(circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS, FSUI_VSTR("Select")),
+			std::make_pair(select_icon, select_text),
 			std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Back")),
 		});
 	}
@@ -8827,7 +8855,7 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 		ImGui::PushFont(g_medium_font.first, g_medium_font.second);
 		ImGui::PushTextWrapPos(content_width);
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in PCSX2, an access token will be generated and used instead."));
+		ImGui::TextWrapped("%s", FSUI_CSTR("Please enter your user name and password for retroachievements.org below.\n\nYour password will not be saved in XBSX2, an access token will be generated and used instead."));
 		ImGui::PopStyleColor();
 		ImGui::PopTextWrapPos();
 		ImGui::PopFont();
@@ -8849,19 +8877,42 @@ void FullscreenUI::DrawAchievementsLoginWindow()
 		if (s_achievements_login_logging_in || s_achievements_login_show_dismiss)
 			ImGui::BeginDisabled();
 
+		bool show_open_keyboard_hint = false;
 		ImGui::SetNextItemWidth(content_width);
 		ImGui::InputTextWithHint("##username", FSUI_CSTR("Username"), s_achievements_login_username, sizeof(s_achievements_login_username));
+		show_open_keyboard_hint |= (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 		ImGui::Spacing();
 
 		ImGui::SetNextItemWidth(content_width);
 		ImGui::InputTextWithHint("##password", FSUI_CSTR("Password"), s_achievements_login_password, sizeof(s_achievements_login_password), ImGuiInputTextFlags_Password);
+		show_open_keyboard_hint |= (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 		ImGui::PopStyleColor(5);
 		ImGui::PopStyleVar(3);
 
 		if (s_achievements_login_logging_in || s_achievements_login_show_dismiss)
 			ImGui::EndDisabled();
+
+		if (IsGamepadInputSource())
+		{
+			const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+			const char* select_or_keyboard_icon = show_open_keyboard_hint ?
+				                                      GetOpenKeyboardButtonIcon() :
+				                                      (circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS);
+			const std::string_view select_or_keyboard_text = show_open_keyboard_hint ? FSUI_VSTR("Open Keyboard") : FSUI_VSTR("Select");
+			SetFullscreenFooterText(std::array{
+				std::make_pair(select_or_keyboard_icon, select_or_keyboard_text),
+				std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Cancel")),
+			});
+		}
+		else
+		{
+			SetFullscreenFooterText(std::array{
+				std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
+				std::make_pair(ICON_PF_ESC, FSUI_VSTR("Cancel")),
+			});
+		}
 
 		ImGui::Spacing();
 		ImGui::Spacing();
@@ -9454,6 +9505,7 @@ TRANSLATE_NOOP("FullscreenUI", "No input profiles available.");
 TRANSLATE_NOOP("FullscreenUI", "Custom input profiles are used to override the Shared input profile for specific games.\n\nTo apply a custom input profile to a game, go to its Game Properties, then change the 'Input Profile' on the Summary tab.\n\nEnter the name for the new input profile:");
 TRANSLATE_NOOP("FullscreenUI", "Are you sure you want to restore the default settings? Any preferences will be lost.");
 TRANSLATE_NOOP("FullscreenUI", "Settings reset to defaults.");
+TRANSLATE_NOOP("FullscreenUI", "At least one controller input source must be enabled.");
 TRANSLATE_NOOP("FullscreenUI", "No save present in this slot.");
 TRANSLATE_NOOP("FullscreenUI", "No save states found.");
 TRANSLATE_NOOP("FullscreenUI", "Failed to delete save state.");
@@ -9899,6 +9951,7 @@ TRANSLATE_NOOP("FullscreenUI", "Please enter your user name and password for ret
 TRANSLATE_NOOP("FullscreenUI", "Username");
 TRANSLATE_NOOP("FullscreenUI", "Password");
 TRANSLATE_NOOP("FullscreenUI", "Logging in...");
+TRANSLATE_NOOP("FullscreenUI", "Dismiss");
 TRANSLATE_NOOP("FullscreenUI", "Login");
 TRANSLATE_NOOP("FullscreenUI", "Cancel");
 TRANSLATE_NOOP("FullscreenUI", "When enabled and logged in, XBSX2 will scan for achievements on startup.");
@@ -9962,6 +10015,7 @@ TRANSLATE_NOOP("FullscreenUI", "Time Played: {}");
 TRANSLATE_NOOP("FullscreenUI", "Last Played: {}");
 TRANSLATE_NOOP("FullscreenUI", "Size: {:.2f} MB");
 TRANSLATE_NOOP("FullscreenUI", "Are you sure you want to reset the play time for '{}' ({})?\n\nYour current play time is {}.\n\nThis action cannot be undone.");
+TRANSLATE_NOOP("FullscreenUI", "Successfully logged in as {}.");
 TRANSLATE_NOOP("FullscreenUI", "Login failed.\nError: {}\n\nPlease check your username and password, and try again.");
 TRANSLATE_NOOP("FullscreenUI", "Failed to Load State From Backup Slot {}");
 TRANSLATE_NOOP("FullscreenUI", "Failed to Load State From Slot {}");
@@ -10185,6 +10239,7 @@ TRANSLATE_NOOP("FullscreenUI", "Size");
 TRANSLATE_NOOP("FullscreenUI", "Change Selection");
 TRANSLATE_NOOP("FullscreenUI", "Select");
 TRANSLATE_NOOP("FullscreenUI", "Parent Directory");
+TRANSLATE_NOOP("FullscreenUI", "Open Keyboard");
 TRANSLATE_NOOP("FullscreenUI", "Enter Value");
 TRANSLATE_NOOP("FullscreenUI", "About");
 TRANSLATE_NOOP("FullscreenUI", "Navigate");

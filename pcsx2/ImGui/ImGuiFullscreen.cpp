@@ -23,6 +23,7 @@
 #include "common/Timer.h"
 
 #include "IconsFontAwesome6.h"
+#include "IconsPromptFont.h"
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
 
@@ -2527,6 +2528,7 @@ void ImGuiFullscreen::DrawInputDialog()
 	ImGui::PushStyleColor(ImGuiCol_PopupBg, UIPopupBackgroundColor);
 
 	bool is_open = true;
+	bool input_box_active = false;
 	if (ImGui::BeginPopupModal(s_input_dialog_title.c_str(), &is_open,
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
 	{
@@ -2581,6 +2583,7 @@ void ImGuiFullscreen::DrawInputDialog()
 		ImGui::InputText("##input", &s_input_dialog_text, flags, 
 			(s_input_dialog_filter_type != InputFilterType::None) ? input_callback : nullptr,
 			(s_input_dialog_filter_type != InputFilterType::None) ? static_cast<void*>(&s_input_dialog_filter_type) : nullptr);
+		input_box_active = (ImGui::IsItemHovered() || ImGui::IsItemActive() || ImGui::IsItemFocused());
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + LayoutScale(10.0f));
 
@@ -2610,7 +2613,29 @@ void ImGuiFullscreen::DrawInputDialog()
 	if (!is_open)
 		CloseInputDialog();
 	else
-		GetInputDialogHelpText(s_fullscreen_footer_text);
+	{
+		if (IsGamepadInputSource())
+		{
+			const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+			const char* select_or_keyboard_icon = input_box_active ?
+			                                          (ImGuiManager::IsGamepadNorthWestSwapped() ? ICON_PF_BUTTON_SQUARE : ICON_PF_BUTTON_TRIANGLE) :
+			                                          (circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS);
+			const std::string_view select_or_keyboard_text = input_box_active ?
+			                                                     Host::TranslateToStringView("FullscreenUI", "Open Keyboard") :
+			                                                     Host::TranslateToStringView("FullscreenUI", "Select");
+			CreateFooterTextString(s_fullscreen_footer_text, std::array{
+																 std::make_pair(select_or_keyboard_icon, select_or_keyboard_text),
+																 std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, Host::TranslateToStringView("FullscreenUI", "Cancel")),
+															 });
+		}
+		else
+		{
+			CreateFooterTextString(s_fullscreen_footer_text, std::array{
+																 std::make_pair(ICON_PF_ENTER, Host::TranslateToStringView("FullscreenUI", "Select")),
+																 std::make_pair(ICON_PF_ESC, Host::TranslateToStringView("FullscreenUI", "Cancel")),
+															 });
+		}
+	}
 
 	ImGui::PopStyleColor(4);
 	ImGui::PopStyleVar(3);

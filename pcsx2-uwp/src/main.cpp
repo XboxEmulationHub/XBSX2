@@ -600,13 +600,31 @@ std::string Host::TranslatePluralToString(const char* context, const char* msg, 
 }
 void WinRTHost::ProcessEventQueue()
 {
-	if (!m_event_queue.empty())
+	while (true)
 	{
-		std::unique_lock lk(m_event_mutex);
-		while (!m_event_queue.empty())
+		std::function<void()> fn;
 		{
-			m_event_queue.front()();
+			std::lock_guard<std::mutex> lk(m_event_mutex);
+			if (m_event_queue.empty())
+				break;
+			fn = std::move(m_event_queue.front());
 			m_event_queue.pop_front();
+		}
+		try
+		{
+			fn();
+		}
+		catch (const std::system_error& e)
+		{
+			Console.Error("UWP: CPU thread callback threw std::system_error: %s (%s)", e.what(), e.code().message().c_str());
+		}
+		catch (const std::exception& e)
+		{
+			Console.Error("UWP: CPU thread callback threw: %s", e.what());
+		}
+		catch (...)
+		{
+			Console.Error("UWP: CPU thread callback threw unknown exception");
 		}
 	}
 }

@@ -3501,10 +3501,18 @@ void FullscreenUI::DrawAboutWindow()
 
 		ImGui::SetCursorPosY(start_y + image_size.y + LayoutScale(2.0f));
 		static const std::string version_text = fmt::format(FSUI_FSTR("Version: {}"), BuildVersion::GitRev);
-		const float version_center_x =
-			ImGui::GetCursorPosX() + ((ImGui::GetCurrentWindow()->WorkRect.GetWidth() - ImGui::CalcTextSize(version_text.c_str()).x) * 0.5f);
+		const float cursor_start_x = ImGui::GetCursorPosX();
+		const float work_width = ImGui::GetCurrentWindow()->WorkRect.GetWidth();
+		const float version_center_x = cursor_start_x + ((work_width - ImGui::CalcTextSize(version_text.c_str()).x) * 0.5f);
 		ImGui::SetCursorPosX(version_center_x);
 		ImGui::TextUnformatted(version_text.c_str());
+#if defined(WINRT_XBOX)
+		static const std::string pcsx2_base_text = fmt::format("PCSX2 v{}.{}.{}", BuildVersion::GitTagHi, BuildVersion::GitTagMid, BuildVersion::GitTagLo);
+		const float pcsx2_x = cursor_start_x + work_width - ImGui::CalcTextSize(pcsx2_base_text.c_str()).x;
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(pcsx2_x);
+		ImGui::TextUnformatted(pcsx2_base_text.c_str());
+#endif
 
 		const float indent = LayoutScale(12.0f);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + indent);
@@ -3521,12 +3529,9 @@ void FullscreenUI::DrawAboutWindow()
 		ImGui::NewLine();
 
 		ImGui::TextWrapped("Credits:");
-
-		ImGui::TextWrapped("Thank you to the PCSX2 team for their hard work on the PCSX2 project.");
-
-		ImGui::TextWrapped("Thank you to SirMangler, and TRW/TheRhysWyrill for porting PCSX2 to UWP.");
-
-		ImGui::TextWrapped("Thank you to Rockso/Redhood/fffathur for help with assets like the App Icon/Banner.");
+		ImGui::BulletText("%s", FSUI_CSTR("PCSX2 - For the base PS2 emulation with great performance"));
+		ImGui::BulletText("%s", FSUI_CSTR("SirMangler / TheRhysWyrill - For rewriting PCSX2 for UWP"));
+		ImGui::BulletText("%s", FSUI_CSTR("Rockso85 / redhood1337 / fffathur - For asset support"));
 
 		ImGui::NewLine();
 
@@ -4153,6 +4158,7 @@ TRANSLATE_NOOP("FullscreenUI", "Operations");
 TRANSLATE_NOOP("FullscreenUI", "Identifies any new files added to the game directories.");
 TRANSLATE_NOOP("FullscreenUI", "Forces a full rescan of all games previously identified.");
 TRANSLATE_NOOP("FullscreenUI", "About XBSX2");
+TRANSLATE_NOOP("FullscreenUI", "v%s • PCSX2 2.6.3");
 TRANSLATE_NOOP("FullscreenUI", "XBSX2 is a free and open-source PlayStation 2 (PS2) emulator. Its purpose is to emulate the PS2's hardware, using a combination of MIPS CPU Interpreters, Recompilers and a Virtual Machine which manages hardware states and PS2 system memory. This allows you to play PS2 games on your PC, with many additional features and benefits.");
 TRANSLATE_NOOP("FullscreenUI", "PlayStation 2 and PS2 are registered trademarks of Sony Interactive Entertainment. This application is not affiliated in any way with Sony Interactive Entertainment.");
 TRANSLATE_NOOP("FullscreenUI", "PCSX2 can automatically download covers for games which do not currently have a cover set. We do not host any cover images, the user must provide their own source for images.");

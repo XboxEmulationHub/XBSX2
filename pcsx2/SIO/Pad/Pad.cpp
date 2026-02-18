@@ -169,6 +169,9 @@ void Pad::SetDefaultControllerConfig(SettingsInterface& si)
 	}
 	si.SetBoolValue("InputSources", "SDLControllerEnhancedMode", true);
 	si.SetBoolValue("InputSources", "SDLPS5PlayerLED", true);
+#ifdef _WIN32
+	si.SetStringValue("InputSources", "PreferredControllerSource", "SDL");
+#endif
 	si.SetBoolValue("Pad", "MultitapPort1", false);
 	si.SetBoolValue("Pad", "MultitapPort2", false);
 	si.SetFloatValue("Pad", "PointerXScale", 8.0f);
@@ -379,6 +382,9 @@ void Pad::CopyConfiguration(SettingsInterface* dest_si, const SettingsInterface&
 		}
 		dest_si->CopyBoolValue(src_si, "InputSources", "SDLControllerEnhancedMode");
 		dest_si->CopyBoolValue(src_si, "InputSources", "SDLPS5PlayerLED");
+#ifdef _WIN32
+		dest_si->CopyStringValue(src_si, "InputSources", "PreferredControllerSource");
+#endif
 	}
 
 	for (u32 port = 0; port < Pad::NUM_CONTROLLER_PORTS; port++)

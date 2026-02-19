@@ -837,13 +837,15 @@ std::vector<std::string> FileSystem::GetRootDirectoryList()
 	add_unique_if_not_empty(winrt::to_string(winrt::Windows::ApplicationModel::Package::Current().InstalledLocation().Path()));
 	add_unique_if_not_empty(winrt::to_string(winrt::Windows::Storage::ApplicationData::Current().LocalFolder().Path()));
 
-	// Drives:
-	// D:\ = Development drive,
-	// E:\ = External storage
-	if (FileSystem::DirectoryExists("D:\\"))
-		add_unique_if_not_empty("D:\\");
-	if (FileSystem::DirectoryExists("E:\\"))
-		add_unique_if_not_empty("E:\\");
+	for (char drive = 'D'; drive <= 'Z'; drive++)
+	{
+		std::string root;
+		root.reserve(3);
+		root.push_back(drive);
+		root.append(":\\");
+		if (FileSystem::DirectoryExists(root.c_str()))
+			add_unique_if_not_empty(std::move(root));
+	}
 #else
 	const char* home_path = std::getenv("HOME");
 	if (home_path)

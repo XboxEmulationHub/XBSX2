@@ -19,6 +19,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "common/CrashHandler.h"
+#include "common/Error.h"
 #include "common/FileSystem.h"
 #include "common/Path.h"
 
@@ -45,6 +46,7 @@ using namespace Windows::UI::Core;
 
 static winrt::Windows::UI::Core::CoreWindow* s_corewind = NULL;
 static std::mutex m_event_mutex;
+static std::condition_variable m_event_cv;
 static std::deque<std::function<void()>> m_event_queue;
 static std::thread::id s_cpu_thread_id;
 static bool s_running = true;
@@ -97,16 +99,16 @@ static void InitOutputResolution()
 	u32 display_width = 0;
 	u32 display_height = 0;
 
-	try
+	if (winrt::try_get_activation_factory<winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation>())
 	{
-		HdmiDisplayInformation hdi = HdmiDisplayInformation::GetForCurrentView();
+		const HdmiDisplayInformation hdi = HdmiDisplayInformation::GetForCurrentView();
 		if (hdi)
 		{
 			display_width = hdi.GetCurrentDisplayMode().ResolutionWidthInRawPixels();
 			display_height = hdi.GetCurrentDisplayMode().ResolutionHeightInRawPixels();
 		}
 	}
-	catch (...)
+	else
 	{
 		s_display_mode_query_failed = true;
 	}
@@ -156,30 +158,45 @@ namespace WinRTHost
 {
 	static bool InitializeConfig();
 	static std::optional<WindowInfo> GetPlatformWindowInfo();
+	static void QueueCPUEvent(std::function<void()> function);
 	static void ProcessEventQueue();
+	static void IdleEventLoop();
 } // namespace WinRTHost
 
 static std::unique_ptr<INISettingsInterface> s_settings_interface;
 static std::unique_ptr<INISettingsInterface> s_secrets_settings_interface;
+static std::atomic_bool s_reopen_fullscreen_ui = false;
+static bool s_save_state_on_shutdown = false;
 
 BEGIN_HOTKEY_LIST(g_host_hotkeys)
 END_HOTKEY_LIST()
 
 bool WinRTHost::InitializeConfig()
 {
-	if (!EmuFolders::SetResourcesDirectory() || !EmuFolders::SetDataDirectory(nullptr))
+	Error error;
+
+	EmuFolders::SetAppRoot();
+
+	if (!EmuFolders::SetResourcesDirectory())
 		return false;
+
+	if (!EmuFolders::SetDataDirectory(&error))
+	{
+		Console.ErrorFmt("Failed to create data directory '{}': {}", EmuFolders::DataRoot, error.GetDescription());
+		return false;
+	}
 
 	CrashHandler::SetWriteDirectory(EmuFolders::DataRoot);
 
 	ImGuiManager::SetFontPath(Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf"));
 
-	const std::string path(Path::Combine(EmuFolders::Settings, "PCSX2.ini"));
+	std::string path(Path::Combine(EmuFolders::Settings, "PCSX2.ini"));
+	const bool settings_exists = FileSystem::FileExists(path.c_str());
 	Console.WriteLn("Loading config from %s.", path.c_str());
 	s_settings_interface = std::make_unique<INISettingsInterface>(std::move(path));
 	Host::Internal::SetBaseSettingsLayer(s_settings_interface.get());
 
-	if (!s_settings_interface->Load() || !VMManager::Internal::CheckSettingsVersion())
+	if (!settings_exists || !s_settings_interface->Load() || !VMManager::Internal::CheckSettingsVersion())
 	{
 		VMManager::SetDefaultSettings(*s_settings_interface, true, true, true, true, true);
 
@@ -188,14 +205,26 @@ bool WinRTHost::InitializeConfig()
 		s_settings_interface->SetIntValue("EmuCore/GS", "VsyncEnable", 1);
 
 		auto lock = Host::GetSettingsLock();
-		if (!s_settings_interface->Save())
-			Console.Error("Failed to save settings.");
+		if (!s_settings_interface->Save(&error))
+		{
+			Console.ErrorFmt("Failed to save settings '{}': {}", s_settings_interface->GetFileName(), error.GetDescription());
+			return false;
+		}
 	}
 
 	const std::string secrets_path(Path::Combine(EmuFolders::Settings, "secrets.ini"));
+	const bool secrets_settings_exists = FileSystem::FileExists(secrets_path.c_str());
+	Console.WriteLn("Loading secrets from %s.", secrets_path.c_str());
 	s_secrets_settings_interface = std::make_unique<INISettingsInterface>(secrets_path);
-	s_secrets_settings_interface->Load();
 	Host::Internal::SetSecretsSettingsLayer(s_secrets_settings_interface.get());
+	if (!secrets_settings_exists || !s_secrets_settings_interface->Load())
+	{
+		if (!s_secrets_settings_interface->Save(&error))
+		{
+			Console.ErrorFmt("Failed to save secrets '{}': {}", s_secrets_settings_interface->GetFileName(), error.GetDescription());
+			return false;
+		}
+	}
 
 	VMManager::Internal::LoadStartupSettings();
 	return true;
@@ -220,7 +249,6 @@ void Host::ReleaseRenderWindow()
 
 void Host::BeginPresentFrame()
 {
-	VMManager::Internal::VSyncOnCPUThread();
 }
 
 void Host::RequestResizeHostDisplay(s32 width, s32 height)
@@ -237,6 +265,7 @@ void Host::OnVMStarted()
 
 void Host::OnVMDestroyed()
 {
+	s_reopen_fullscreen_ui.store(true, std::memory_order_release);
 }
 
 void Host::OnVMPaused()
@@ -245,6 +274,7 @@ void Host::OnVMPaused()
 
 void Host::OnVMResumed()
 {
+	m_event_cv.notify_one();
 }
 
 void Host::OnGameChanged(const std::string& title, const std::string& elf_override, const std::string& disc_path,
@@ -278,9 +308,6 @@ void Host::OnAchievementsLoginRequested(Achievements::LoginRequestReason reason)
 
 void Host::OnAchievementsLoginSuccess(char const* display_name, u32 points, u32 sc_points, u32 unread_msg)
 {
-	Host::AddOSDMessage(fmt::format("RA: Logged in as {} ({} pts, softcore: {} pts). {} unread messages.",
-							display_name, points, sc_points, unread_msg),
-		Host::OSD_INFO_DURATION);
 }
 
 #ifdef ENABLE_ACHIEVEMENTS
@@ -327,40 +354,41 @@ void Host::RunOnCPUThread(std::function<void()> function, bool block /* = false 
 
 	if (!block)
 	{
-		std::lock_guard<std::mutex> lk(m_event_mutex);
-		m_event_queue.push_back(std::move(function));
+		WinRTHost::QueueCPUEvent(std::move(function));
 		return;
 	}
 
 	std::condition_variable cv;
 	std::mutex cv_mutex;
 	bool done = false;
-	{
-		std::lock_guard<std::mutex> lk(m_event_mutex);
-		m_event_queue.push_back([fn = std::move(function), &cv, &cv_mutex, &done]() {
-			fn();
-			{
-				std::lock_guard<std::mutex> lk2(cv_mutex);
-				done = true;
-			}
-			cv.notify_one();
-		});
-	}
+	WinRTHost::QueueCPUEvent([fn = std::move(function), &cv, &cv_mutex, &done]() {
+		fn();
+		{
+			std::lock_guard<std::mutex> lk2(cv_mutex);
+			done = true;
+		}
+		cv.notify_one();
+	});
 	std::unique_lock<std::mutex> lk(cv_mutex);
 	cv.wait(lk, [&done]() { return done; });
 }
 
+void Host::RunOnGSThread(std::function<void()> function)
+{
+	RunOnCPUThread([fn = std::move(function)]() { MTGS::RunOnGSThread(std::move(fn)); });
+}
+
 void Host::RefreshGameListAsync(bool invalidate_cache)
 {
-	if (!b_gamescan_active)
-	{
-		s_gamescanner_thread = std::thread([invalidate_cache]() {
-			b_gamescan_active = true;
-			GameList::Refresh(invalidate_cache, false);
-			b_gamescan_active = false;
-		});
-		s_gamescanner_thread.detach();
-	}
+	if (b_gamescan_active)
+		return;
+
+	b_gamescan_active = true;
+	s_gamescanner_thread = std::thread([invalidate_cache]() {
+		GameList::Refresh(invalidate_cache, false);
+		b_gamescan_active = false;
+	});
+	s_gamescanner_thread.detach();
 }
 
 void Host::CancelGameListRefresh()
@@ -370,6 +398,7 @@ void Host::CancelGameListRefresh()
 void Host::RequestExitApplication(bool allow_confirm)
 {
 	s_running = false;
+	m_event_cv.notify_one();
 }
 
 void Host::RequestExitBigPicture()
@@ -381,7 +410,9 @@ void Host::RequestVMShutdown(bool allow_confirm, bool allow_save_state, bool def
 	if (!VMManager::HasValidVM())
 		return;
 
-	VMManager::Shutdown(allow_save_state && default_save_state);
+	s_save_state_on_shutdown = allow_save_state && default_save_state;
+	VMManager::SetState(VMState::Stopping);
+	m_event_cv.notify_one();
 }
 
 bool Host::IsFullscreen()
@@ -561,6 +592,18 @@ std::optional<WindowInfo> WinRTHost::GetPlatformWindowInfo()
 		wi.surface_scale = 1.0f;
 		wi.type = WindowInfo::Type::WinRT;
 		wi.surface_handle = reinterpret_cast<void*>(winrt::get_abi(*s_corewind));
+
+		if (winrt::try_get_activation_factory<winrt::Windows::Graphics::Display::Core::HdmiDisplayInformation>())
+		{
+			const HdmiDisplayInformation hdi = HdmiDisplayInformation::GetForCurrentView();
+			if (hdi)
+			{
+				const HdmiDisplayMode mode = hdi.GetCurrentDisplayMode();
+				wi.surface_refresh_rate = static_cast<float>(mode.RefreshRate());
+			}
+		}
+		if (wi.surface_refresh_rate <= 0.0f)
+			wi.surface_refresh_rate = 60.0f;
 	}
 	else
 	{
@@ -593,11 +636,21 @@ std::string Host::TranslatePluralToString(const char* context, const char* msg, 
 		if (pos == std::string::npos)
 			break;
 
-		ret.replace(pos, pos + 2, count_str.view());
+		ret.replace(pos, 2, count_str.view());
 	}
 
 	return ret;
 }
+
+void WinRTHost::QueueCPUEvent(std::function<void()> function)
+{
+	{
+		std::lock_guard<std::mutex> lk(m_event_mutex);
+		m_event_queue.push_back(std::move(function));
+	}
+	m_event_cv.notify_one();
+}
+
 void WinRTHost::ProcessEventQueue()
 {
 	while (true)
@@ -626,6 +679,24 @@ void WinRTHost::ProcessEventQueue()
 		{
 			Console.Error("UWP: CPU thread callback threw unknown exception");
 		}
+	}
+}
+
+void WinRTHost::IdleEventLoop()
+{
+	while (s_running)
+	{
+		ProcessEventQueue();
+		VMManager::IdlePollUpdate();
+
+		const VMState state = VMManager::GetState();
+		if (state != VMState::Shutdown && state != VMState::Paused)
+			return;
+
+		std::unique_lock<std::mutex> lk(m_event_mutex);
+		m_event_cv.wait_for(lk, std::chrono::milliseconds(8), []() {
+			return !m_event_queue.empty() || !s_running;
+		});
 	}
 }
 
@@ -660,22 +731,17 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 		}
 
 
-		try
+		if (winrt::try_get_activation_factory<WGI::RawGameController>())
 		{
 			WGI::RawGameController::RawGameControllerAdded(
 				[](auto&&, const WGI::RawGameController raw_game_controller) {
-					std::lock_guard<std::mutex> lk(m_event_mutex);
-					m_event_queue.push_back([]() { InputManager::ReloadDevices(); });
+					WinRTHost::QueueCPUEvent([]() { InputManager::ReloadDevices(); });
 				});
 
 			WGI::RawGameController::RawGameControllerRemoved(
 				[](auto&&, const WGI::RawGameController raw_game_controller) {
-					std::lock_guard<std::mutex> lk(m_event_mutex);
-					m_event_queue.push_back([]() { InputManager::ReloadDevices(); });
+					WinRTHost::QueueCPUEvent([]() { InputManager::ReloadDevices(); });
 				});
-		}
-		catch (winrt::hresult_error)
-		{
 		}
 	}
 
@@ -725,8 +791,7 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 		std::string gamePath = filePath.str();
 		if (!gamePath.empty() && gamePath != "")
 		{
-			std::unique_lock<std::mutex> lk(m_event_mutex);
-			m_event_queue.push_back([gamePath]() {
+			WinRTHost::QueueCPUEvent([gamePath]() {
 				VMBootParameters params{};
 				params.filename = gamePath;
 				params.source_type = CDVD_SourceType::Iso;
@@ -741,7 +806,10 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 					return;
 				}
 
-				VMManager::SetState(VMState::Running);
+				if (!Host::GetBoolSettingValue("UI", "StartPaused", false))
+					VMManager::SetState(VMState::Running);
+				else
+					VMManager::SetPaused(true);
 
 				MTGS::WaitForOpen();
 				InputManager::ReloadDevices();
@@ -757,7 +825,7 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	{
 	}
 
-	void Run()
+	const void Run()
 	{
 		s_cpu_thread_id = std::this_thread::get_id();
 
@@ -785,49 +853,53 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 		window.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
 			Sleep(500);
-			InputManager::ReloadDevices();
+			Host::RunOnCPUThread([]() { InputManager::ReloadDevices(); });
 		});
 
 		while (s_running)
 		{
-			window.Dispatcher().ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
-
-			if (VMManager::HasValidVM())
+			switch (VMManager::GetState())
 			{
-				switch (VMManager::GetState())
-				{
-					case VMState::Initializing:
-						pxFailRel("Shouldn't be in the starting state state");
-						break;
+				case VMState::Initializing:
+					pxFailRel("Shouldn't be in the starting state state");
+					break;
 
-					case VMState::Paused:
-						InputManager::PollSources();
-						WinRTHost::ProcessEventQueue();
-						break;
+				case VMState::Shutdown:
+					if (s_reopen_fullscreen_ui.exchange(false, std::memory_order_acq_rel) && !MTGS::IsOpen())
+					{
+						ImGuiManager::InitializeFullscreenUI();
+						MTGS::WaitForOpen();
+					}
+					WinRTHost::IdleEventLoop();
+					break;
 
-					case VMState::Running:
-						VMManager::Execute();
-						break;
+				case VMState::Paused:
+					WinRTHost::IdleEventLoop();
+					break;
 
-					case VMState::Resetting:
-						VMManager::Reset();
-						break;
+				case VMState::Running:
+					WinRTHost::ProcessEventQueue();
+					VMManager::Execute();
+					break;
 
-					case VMState::Stopping:
-						WinRTHost::ProcessEventQueue();
-						return;
+				case VMState::Resetting:
+					VMManager::Reset();
+					break;
 
-					default:
-						break;
-				}
+				case VMState::Stopping:
+					VMManager::Shutdown(s_save_state_on_shutdown);
+					s_save_state_on_shutdown = false;
+					WinRTHost::ProcessEventQueue();
+					if (!MTGS::IsOpen())
+					{
+						ImGuiManager::InitializeFullscreenUI();
+						MTGS::WaitForOpen();
+					}
+					break;
+
+				default:
+					break;
 			}
-			else
-			{
-				WinRTHost::ProcessEventQueue();
-				InputManager::PollSources();
-			}
-
-			Sleep(1);
 		}
 
 		if (!m_launchOnExit.empty())

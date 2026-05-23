@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props')" />
   <Import Project="$(SolutionDir)common\vsprops\BaseProjectConfig.props" />
   <Import Project="$(SolutionDir)common\vsprops\LinkPCSX2Deps.props" />
   <Import Project="$(SolutionDir)common\vsprops\WinSDK.props" />
@@ -27,51 +27,9 @@
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '17.0'">v143</PlatformToolset>
     <PlatformToolset Condition="'$(VisualStudioVersion)' == '16.0'">v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <LinkIncremental>true</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug Clang|ARM64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug Clang|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug Clang AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Devel|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Devel AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Devel Clang|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Devel Clang AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release Clang|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-  </PropertyGroup>
-  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release Clang AVX2|x64'">
-    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="$(Configuration.Contains(Release))">true</WholeProgramOptimization>
+    <UseDebugLibraries Condition="$(Configuration.Contains(Debug))">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="!$(Configuration.Contains(Debug))">false</UseDebugLibraries>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -108,47 +66,28 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\fmt\fmt\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\rapidyaml\rapidyaml\ext\c4core\src\c4\ext\fast_float\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\simpleini\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\xbyak;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\xz\xz\src\liblzma\api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(SolutionDir)3rdparty\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)pcsx2;$(SolutionDir)3rdparty\include;$(SolutionDir)3rdparty\imgui\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <!-- Needed for moc pch -->
-      <AdditionalIncludeDirectories>$(SolutionDir)\3rdparty\fast_float\include;$(SolutionDir)\3rdparty\fmt\include;%(AdditionalIncludeDirectories);$(ProjectDir)\Settings;$(ProjectDir)\GameList</AdditionalIncludeDirectories>
-      <ExceptionHandling>false</ExceptionHandling>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)pcsx2;$(SolutionDir)3rdparty\include;$(SolutionDir)3rdparty\imgui\include;$(SolutionDir)3rdparty\fast_float\include;$(SolutionDir)3rdparty\fmt\include;$(SolutionDir)3rdparty\simpleini\include;$(SolutionDir)3rdparty\glad\include;$(DepsIncludeDir)\freetype2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Platform)'=='x64'">$(SolutionDir)3rdparty\xbyak;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>PrecompiledHeader.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pcsx2.pch</PrecompiledHeaderOutputFile>
-      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;LZMA_API_STATIC;BUILD_DX=1;ENABLE_RAINTEGRATION;ENABLE_ACHIEVEMENTS;DIRECTINPUT_VERSION=0x0800;PCSX2_CORE;WINRT_XBOX;_M_X86;_AMD64_;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains(Debug))">PCSX2_DEBUG;PCSX2_DEVBUILD;_SECURE_SCL_=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains(Devel))">PCSX2_DEVEL;PCSX2_DEVBUILD;NDEBUG;_SECURE_SCL_=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains(Release))">NDEBUG;_SECURE_SCL_=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="!$(Configuration.Contains(AVX2))">_M_SSE=0x401;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains(AVX2))">_M_SSE=0x501;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <EnableEnhancedInstructionSet Condition="!$(Configuration.Contains(AVX2)) Or $(Configuration.Contains(Clang))">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="$(Configuration.Contains(AVX2)) And !$(Configuration.Contains(Clang))">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <AdditionalOptions Condition="$(Configuration.Contains(Clang)) And !$(Configuration.Contains(AVX2))"> -march=nehalem %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="$(Configuration.Contains(Clang)) And $(Configuration.Contains(AVX2))"> -march=haswell %(AdditionalOptions)</AdditionalOptions>
-      <MinimalRebuild>false</MinimalRebuild>
+      <PreprocessorDefinitions>LZMA_API_STATIC;ENABLE_RAINTEGRATION;ENABLE_ACHIEVEMENTS;WINRT_XBOX;UNICODE;_UNICODE;SI_NO_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)%(RelativeDir)</ObjectFileName>
-      <!-- SH 2/3 flashlight, explicitly set here don't change -->
-      <!-- https://github.com/PCSX2/pcsx2/commit/16431653e4d92fda4069031897e24fbe4688d36a -->
-      <FloatingPointModel>Precise</FloatingPointModel>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <SDLCheck>false</SDLCheck>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <ControlFlowGuard>false</ControlFlowGuard>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalOptions>/Zc:__cplusplus /Zo /utf-8 /wd26495 /wd26498 %(AdditionalOptions) /bigobj /D</AdditionalOptions>
+      <AdditionalOptions>/wd26495 /wd26498 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug Clang|ARM64'">Full</Optimization>
       <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Debug Clang|ARM64'">Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\pcsx2core\$(Platform)\$(Configuration);$(DepsLibDir);$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\$(Platform)\$(Configuration);$(DepsLibDir);$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>setupapi.lib;comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;xaudio2.lib;rpcrt4.lib;xinputuap.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <DelayLoadDLLs>opengl32.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -232,153 +171,6 @@
     <None Include="packages.config" />
     <None Include="pcsx2-uwp_TemporaryKey.pfx" />
     <None Include="PropertySheet.props" />
-    <None Include="resources\fonts\NotoColorEmoji-Regular-license">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fonts\promptfont-license">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fonts\Roboto-Regular-copyright">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\applications-system.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\back-icon.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\desktop-mode.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\drive-cdrom.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\exit.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\media-cdrom.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\start-bios.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\start-file.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\fullscreenui\start-game.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\GameIndex.yaml">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\AppBanner.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\flags\NTSC-B.svg" />
-    <None Include="resources\icons\flags\NTSC-C.svg" />
-    <None Include="resources\icons\flags\NTSC-HK.svg" />
-    <None Include="resources\icons\flags\NTSC-J.svg" />
-    <None Include="resources\icons\flags\NTSC-K.svg" />
-    <None Include="resources\icons\flags\NTSC-T.svg" />
-    <None Include="resources\icons\flags\NTSC-U.svg" />
-    <None Include="resources\icons\flags\Other.svg" />
-    <None Include="resources\icons\flags\PAL-A.svg" />
-    <None Include="resources\icons\flags\PAL-AF.svg" />
-    <None Include="resources\icons\flags\PAL-AU.svg" />
-    <None Include="resources\icons\flags\PAL-BE.svg" />
-    <None Include="resources\icons\flags\PAL-E.svg" />
-    <None Include="resources\icons\flags\PAL-F.svg" />
-    <None Include="resources\icons\flags\PAL-FI.svg" />
-    <None Include="resources\icons\flags\PAL-G.svg" />
-    <None Include="resources\icons\flags\PAL-GR.svg" />
-    <None Include="resources\icons\flags\PAL-I.svg" />
-    <None Include="resources\icons\flags\PAL-IN.svg" />
-    <None Include="resources\icons\flags\PAL-M.svg" />
-    <None Include="resources\icons\flags\PAL-NL.svg" />
-    <None Include="resources\icons\flags\PAL-NO.svg" />
-    <None Include="resources\icons\flags\PAL-P.svg" />
-    <None Include="resources\icons\flags\PAL-PL.svg" />
-    <None Include="resources\icons\flags\PAL-R.svg" />
-    <None Include="resources\icons\flags\PAL-S.svg" />
-    <None Include="resources\icons\flags\PAL-SC.svg" />
-    <None Include="resources\icons\flags\PAL-SW.svg" />
-    <None Include="resources\icons\flags\PAL-SWI.svg" />
-    <None Include="resources\icons\flags\PAL-UK.svg" />
-    <None Include="resources\icons\ra-icon.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-0.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-1.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-2.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-3.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-4.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\icons\star-5.svg">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\patches.zip">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\cas.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\convert.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\imgui.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\interlace.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\merge.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\present.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\shadeboost.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\tfx_fs.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\opengl\tfx_vgs.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\cas.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\convert.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\imgui.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\interlace.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\merge.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\present.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\shadeboost.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\vulkan\tfx.glsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
@@ -409,68 +201,6 @@
     <Image Include="Assets\StoreLogo.scale-400.png">
       <DeploymentContent>true</DeploymentContent>
     </Image>
-    <Image Include="resources\cover-placeholder.png" />
-    <Image Include="resources\fullscreenui\placeholder.png" />
-    <Image Include="resources\fullscreenui\no-save.png" />
-    <Image Include="resources\icons\AppIconLarge.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="resources\game_controller_db.txt" />
-    <Text Include="resources\sounds\achievements\README.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Font Include="resources\fonts\fa-solid-900.ttf" />
-    <Font Include="resources\fonts\NotoColorEmoji-Regular.ttf" />
-    <Font Include="resources\fonts\promptfont.otf" />
-    <Font Include="resources\fonts\Roboto-Regular.ttf" />
-    <Font Include="resources\fonts\RobotoMono-Medium.ttf" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="resources\shaders\common\fxaa.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\common\ffx_a.h">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\common\ffx_cas.h">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\cas.hlsl">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\convert.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\imgui.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\interlace.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\merge.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\present.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\shadeboost.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <None Include="resources\shaders\dx11\tfx.fx">
-      <DeploymentContent>true</DeploymentContent>
-    </None>
-    <Media Include="resources\sounds\achievements\lbsubmit.wav">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
-    </Media>
-    <Media Include="resources\sounds\achievements\message.wav">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
-    </Media>
-    <Media Include="resources\sounds\achievements\unlock.wav">
-      <DeploymentContent>true</DeploymentContent>
-      <FileType>Document</FileType>
-    </Media>
   </ItemGroup>
   <ItemGroup>
     <Content Include="$(DepsBinDir)\*.dll">
@@ -479,13 +209,20 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>
+  <Target Name="AddUWPResources" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <None Include="resources\**\*">
+        <DeploymentContent>true</DeploymentContent>
+      </None>
+    </ItemGroup>
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.3.0.260818.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
 </Project>

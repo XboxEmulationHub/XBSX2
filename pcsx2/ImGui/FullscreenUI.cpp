@@ -3500,7 +3500,7 @@ void FullscreenUI::DrawAboutWindow()
 		DrawListSvgTexture(ImGui::GetWindowDrawList(), s_banner_texture.get(), image_rect.Min, image_rect.Max);
 
 		ImGui::SetCursorPosY(start_y + image_size.y + LayoutScale(2.0f));
-		static const std::string version_text = fmt::format(FSUI_FSTR("Version: {}"), BuildVersion::GitRev);
+		static const std::string version_text = fmt::format(FSUI_FSTR("Version: {}"), APP_VERSION);
 		const float cursor_start_x = ImGui::GetCursorPosX();
 		const float work_width = ImGui::GetCurrentWindow()->WorkRect.GetWidth();
 		const float version_center_x = cursor_start_x + ((work_width - ImGui::CalcTextSize(version_text.c_str()).x) * 0.5f);
@@ -3760,7 +3760,7 @@ void FullscreenUI::DrawCoverDownloaderWindow()
 		BeginMenuButtons();
 		ResetFocusHere();
 
-		ImGui::TextWrapped("%s", FSUI_CSTR("PCSX2 can automatically download covers for games which do not currently have a cover set. We do not host any cover images, the user must provide their own source for images."));
+		ImGui::TextWrapped("%s", FSUI_CSTR("XBSX2 can automatically download covers for games which do not currently have a cover set. We do not host any cover images, the user must provide their own source for images."));
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + LayoutScale(8.0f));
 		ImGui::TextWrapped("%s", FSUI_CSTR("Enter one or more cover image URL templates below. Variables such as ${serial} and ${title} are supported. See the Qt Cover Downloader for more information."));
 

@@ -148,8 +148,8 @@
     </ClCompile>
     <Link>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\pcsx2core\$(Platform)\$(Configuration);$(SolutionDir)\uwp-deps\lib;$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>setupapi.lib;comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;xaudio2.lib;rpcrt4.lib;xinputuap.lib;libfreetype.dll.a;libjpeg.dll.a;libpng16.dll.a;libwebp.dll.a;liblz4.dll.a;libz.dll.a;libzstd.dll.a;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)pcsx2\pcsx2core\$(Platform)\$(Configuration);$(DepsLibDir);$(WindowsSDK_LibraryPath_x64);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>setupapi.lib;comctl32.lib;ws2_32.lib;shlwapi.lib;winmm.lib;xaudio2.lib;rpcrt4.lib;xinputuap.lib;windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -816,7 +816,7 @@
     </Media>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(SolutionDir)\uwp-deps\bin\*.dll">
+    <Content Include="$(DepsBinDir)\*.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

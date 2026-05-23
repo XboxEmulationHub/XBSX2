@@ -497,7 +497,7 @@
     </Media>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(SolutionDir)\uwp-deps\bin\*.dll">
+    <Content Include="$(DepsBinDir)\*.dll">
       <Filter>Dependencies</Filter>
     </Content>
   </ItemGroup>

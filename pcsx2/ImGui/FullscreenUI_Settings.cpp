@@ -3365,10 +3365,12 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 			FSUI_CSTR("Skips displaying frames that don't change in 25/30fps games. Can improve speed, but increase input lag/make frame pacing "
 					  "worse."),
 			"EmuCore/GS", "SkipDuplicateFrames", true);
+#if !defined(WINRT_XBOX)
 		DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_ENVELOPE, "Disable Mailbox Presentation"),
 			FSUI_CSTR("Forces the use of FIFO over Mailbox presentation, i.e. double buffering instead of triple buffering. "
 					  "Usually results in worse frame pacing."),
 			"EmuCore/GS", "DisableMailboxPresentation", false);
+#endif
 		DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_CLONE, "Use Blit Swap Chain"),
 			FSUI_CSTR("Uses a blit presentation model instead of flipping when using the Direct3D 11 "
 					  "graphics API. This usually results in slower performance, but may be required for some "

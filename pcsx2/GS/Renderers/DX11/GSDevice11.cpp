@@ -777,9 +777,13 @@ void GSDevice11::SetVSyncMode(GSVSyncMode mode, bool allow_present_throttle)
 
 u32 GSDevice11::GetSwapChainBufferCount() const
 {
+#if defined(WINRT_XBOX)
+	return 3;
+#else
 	// With vsync off, we only need two buffers. Same for blocking vsync.
 	// With triple buffering, we need three.
 	return (m_vsync_mode == GSVSyncMode::Mailbox) ? 3 : 2;
+#endif
 }
 
 bool GSDevice11::CreateSwapChain()

@@ -181,6 +181,7 @@ static std::string s_elf_override;
 static std::string s_input_profile_name;
 static u32 s_frame_advance_count = 0;
 static bool s_fast_boot_requested = false;
+static bool s_vsync_reapply_pending = false;
 static bool s_gs_open_on_initialize = false;
 static bool s_thread_affinities_set = false;
 
@@ -274,6 +275,13 @@ void VMManager::SetState(VMState state)
 
 	if (state != VMState::Stopping && (state == VMState::Paused || old_state == VMState::Paused))
 	{
+#ifdef WINRT_XBOX
+		if (state == VMState::Running && old_state == VMState::Paused && s_vsync_reapply_pending && EmuConfig.GS.VsyncEnable)
+		{
+			MTGS::ReapplyVSyncMode();
+			s_vsync_reapply_pending = false;
+		}
+#endif
 		const bool paused = (state == VMState::Paused);
 		if (paused)
 		{
@@ -1373,6 +1381,7 @@ VMBootResult VMManager::Initialize(const VMBootParameters& boot_params, Error* e
 
 		UpdateGameSettingsLayer();
 		s_state.store(VMState::Shutdown, std::memory_order_release);
+		s_vsync_reapply_pending = false;
 		Host::OnVMDestroyed();
 		ApplySettings();
 	};
@@ -1628,6 +1637,7 @@ VMBootResult VMManager::Initialize(const VMBootParameters& boot_params, Error* e
 
 	Console.WriteLn("VM subsystems initialized in %.2f ms", init_timer.GetTimeMilliseconds());
 	s_state.store(VMState::Paused, std::memory_order_release);
+	s_vsync_reapply_pending = true;
 	Host::OnVMStarted();
 	FullscreenUI::OnVMStarted();
 	UpdateInhibitScreensaver(EmuConfig.InhibitScreensaver);
@@ -2793,8 +2803,12 @@ GSVSyncMode VMManager::GetEffectiveVSyncMode()
 	// Try to keep the same present mode whether we're running or not, since it'll avoid flicker.
 	const VMState state = GetState();
 	const bool valid_vm = (state != VMState::Shutdown && state != VMState::Stopping);
-	if (s_target_speed_can_sync_to_host || (!valid_vm && EmuConfig.EmulationSpeed.SyncToHostRefreshRate) ||
-		EmuConfig.GS.DisableMailboxPresentation)
+	const bool use_fifo = s_target_speed_can_sync_to_host || (!valid_vm && EmuConfig.EmulationSpeed.SyncToHostRefreshRate)
+#if !defined(WINRT_XBOX)
+		|| EmuConfig.GS.DisableMailboxPresentation
+#endif
+		;
+	if (use_fifo)
 	{
 		return GSVSyncMode::FIFO;
 	}

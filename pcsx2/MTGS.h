@@ -73,6 +73,7 @@ namespace MTGS
 	void UpdateDisplayWindow();
 	void SetVSyncMode(GSVSyncMode mode, bool allow_present_throttle);
 	void UpdateVSyncMode();
+	void ReapplyVSyncMode();
 	void SetSoftwareRendering(bool software, GSInterlaceMode interlace, bool display_message = true);
 	void ToggleSoftwareRendering();
 	bool SaveMemorySnapshot(u32 window_width, u32 window_height, bool apply_aspect, bool crop_borders,

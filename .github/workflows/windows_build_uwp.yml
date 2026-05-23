@@ -113,7 +113,7 @@ jobs:
       - name: Build XBSX2 UWP
         shell: cmd
         run: |
-          msbuild "PCSX2_qt.sln" /m /v:m /p:PlatformToolset=v143 /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /t:restore,build /p:RestorePackagesConfig=true
+          msbuild "PCSX2_qt.sln" /m /v:m /p:PlatformToolset=v145 /p:Configuration="${{ inputs.configuration }}" /p:Platform="${{ inputs.platform }}" /t:restore,build /p:RestorePackagesConfig=true
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6

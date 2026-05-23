@@ -2,8 +2,8 @@
 
 #include "UWPKeyboard.h"
 
-#include <gamingdeviceinformation.h>
 #include <windows.h>
+#include <gamingdeviceinformation.h>
 #include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.ApplicationModel.Core.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -38,6 +38,8 @@
 #ifdef ENABLE_ACHIEVEMENTS
 #include "pcsx2/Achievements.h"
 #endif
+
+#include <future>
 
 using namespace winrt;
 using namespace Windows::ApplicationModel::Core;
@@ -188,7 +190,36 @@ bool WinRTHost::InitializeConfig()
 
 	CrashHandler::SetWriteDirectory(EmuFolders::DataRoot);
 
-	ImGuiManager::SetFontPath(Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf"));
+	{
+		const std::string roboto_path = Path::Combine(EmuFolders::Resources, "fonts" FS_OSPATH_SEPARATOR_STR "Roboto-Regular.ttf");
+		const auto roboto_data = FileSystem::MapBinaryFileForRead(roboto_path.c_str());
+		if (roboto_data.empty())
+		{
+			Console.ErrorFmt("Failed to load font file '{}'.", roboto_path);
+			return false;
+		}
+
+		std::vector<ImGuiManager::FontInfo> fonts;
+		ImGuiManager::FontInfo fi{};
+		fi.data = roboto_data;
+		fi.exclude_ranges = {};
+		fi.face_name = nullptr;
+		fi.is_emoji_font = false;
+		fonts.push_back(fi);
+
+		const auto emoji_data = FileSystem::MapBinaryFileForRead("C:\\Windows\\Fonts\\seguiemj.ttf");
+		if (!emoji_data.empty())
+		{
+			ImGuiManager::FontInfo efi{};
+			efi.data = emoji_data;
+			efi.exclude_ranges = {};
+			efi.face_name = nullptr;
+			efi.is_emoji_font = true;
+			fonts.push_back(efi);
+		}
+
+		ImGuiManager::SetFonts(std::move(fonts));
+	}
 
 	std::string path(Path::Combine(EmuFolders::Settings, "PCSX2.ini"));
 	const bool settings_exists = FileSystem::FileExists(path.c_str());
@@ -240,6 +271,18 @@ void Host::CheckForSettingsChanges(const Pcsx2Config& old_config)
 
 std::optional<WindowInfo> Host::AcquireRenderWindow(bool recreate_window)
 {
+	if (recreate_window && s_corewind)
+	{
+		if (!s_corewind->Dispatcher().HasThreadAccess())
+		{
+			std::promise<void> promise;
+			auto future = promise.get_future();
+			s_corewind->Dispatcher().RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [&promise]() {
+				promise.set_value();
+			});
+			future.wait();
+		}
+	}
 	return WinRTHost::GetPlatformWindowInfo();
 }
 
@@ -298,12 +341,20 @@ void Host::OnSaveStateSaved(const std::string_view filename)
 {
 }
 
+void Host::SetMouseLock(bool state)
+{
+}
+
+int Host::LocaleSensitiveCompare(std::string_view lhs, std::string_view rhs)
+{
+	const int res = std::strncmp(lhs.data(), rhs.data(), std::min(lhs.size(), rhs.size()));
+	if (res != 0)
+		return res;
+	return lhs.size() > rhs.size() ? 1 : (lhs.size() < rhs.size() ? -1 : 0);
+}
+
 void Host::OnAchievementsLoginRequested(Achievements::LoginRequestReason reason)
 {
-	Host::RunOnCPUThread([reason]() {
-		VMManager::SetPaused(true);
-		FullscreenUI::SetAchievementsLoginReason(reason);
-	});
 }
 
 void Host::OnAchievementsLoginSuccess(char const* display_name, u32 points, u32 sc_points, u32 unread_msg)
@@ -498,6 +549,11 @@ void Host::OpenURL(const std::string_view url)
 bool Host::CopyTextToClipboard(const std::string_view text)
 {
 	return false;
+}
+
+std::string Host::GetTextFromClipboard()
+{
+	return {};
 }
 
 void Host::BeginTextInput()
@@ -825,20 +881,9 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 	{
 	}
 
-	const void Run()
+	static void EmuThread()
 	{
 		s_cpu_thread_id = std::this_thread::get_id();
-
-		InitOutputResolution();
-
-		CoreWindow window = CoreWindow::GetForCurrentThread();
-		window.Activate();
-		s_corewind = &window;
-
-		auto navigation = winrt::Windows::UI::Core::SystemNavigationManager::GetForCurrentView();
-		navigation.BackRequested(
-			[](const winrt::Windows::Foundation::IInspectable&,
-				const winrt::Windows::UI::Core::BackRequestedEventArgs& args) { args.Handled(true); });
 
 		VMManager::Internal::CPUThreadInitialize();
 
@@ -850,11 +895,6 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 			MTGS::WaitForOpen();
 		}
-
-		window.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
-			Sleep(500);
-			Host::RunOnCPUThread([]() { InputManager::ReloadDevices(); });
-		});
 
 		while (s_running)
 		{
@@ -902,20 +942,52 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 			}
 		}
 
+		VMManager::Internal::CPUThreadShutdown();
+	}
+
+	std::thread m_emu_thread;
+
+	const void Run()
+	{
+		InitOutputResolution();
+
+		CoreWindow window = CoreWindow::GetForCurrentThread();
+		window.Activate();
+		s_corewind = &window;
+
+		auto navigation = winrt::Windows::UI::Core::SystemNavigationManager::GetForCurrentView();
+		navigation.BackRequested(
+			[](const winrt::Windows::Foundation::IInspectable&,
+				const winrt::Windows::UI::Core::BackRequestedEventArgs& args) { args.Handled(true); });
+
+		m_emu_thread = std::thread(EmuThread);
+
+		window.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, []() {
+			Sleep(500);
+			Host::RunOnCPUThread([]() { InputManager::ReloadDevices(); });
+		});
+
+		while (s_running)
+		{
+			window.Dispatcher().ProcessEvents(CoreProcessEventsOption::ProcessAllIfPresent);
+			Sleep(1);
+		}
+
+		if (m_emu_thread.joinable())
+			m_emu_thread.join();
+
 		if (!m_launchOnExit.empty())
 		{
 			winrt::Windows::Foundation::Uri m_uri{m_launchOnExit};
 			auto asyncOperation = winrt::Windows::System::Launcher::LaunchUriAsync(m_uri);
 			asyncOperation.Completed([](winrt::Windows::Foundation::IAsyncOperation<bool> const& sender,
 										 winrt::Windows::Foundation::AsyncStatus const asyncStatus) {
-				VMManager::Internal::CPUThreadShutdown();
 				CoreApplication::Exit();
 				return;
 			});
 		}
 		else
 		{
-			VMManager::Internal::CPUThreadShutdown();
 			CoreApplication::Exit();
 		}
 	}

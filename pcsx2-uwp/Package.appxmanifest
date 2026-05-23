@@ -8,7 +8,7 @@
 	<Identity
 	  Name="595c25f0-b370-4d7a-9b14-3027fbd69ecf"
 	  Publisher="CN=SternXD"
-	  Version="2.0.8.5" />
+	  Version="2.0.9.0" />
 
 	<Properties>
 		<DisplayName>XBSX2</DisplayName>

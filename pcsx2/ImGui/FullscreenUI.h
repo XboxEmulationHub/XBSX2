@@ -14,11 +14,6 @@
 
 struct Pcsx2Config;
 
-namespace Achievements
-{
-	enum class LoginRequestReason;
-}
-
 namespace FullscreenUI
 {
 	class HddCreateInProgress;
@@ -40,9 +35,6 @@ namespace FullscreenUI
 
 	// Create a new memory card.
 	void DrawCreateMemoryCardWindow();
-	
-	// Set the login reason for the achievements login window
-	void SetAchievementsLoginReason(Achievements::LoginRequestReason reason);
 	void DrawAchievementsLoginWindow();
 
 	// NOTE: Only call from GS thread.
@@ -82,4 +74,4 @@ namespace Host
 } // namespace Host
 
 // Change this to change the version in the about screen.
-#define APP_VERSION "2.0.8.5"
+#define APP_VERSION "2.0.9.0"

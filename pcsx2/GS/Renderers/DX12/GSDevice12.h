@@ -475,7 +475,7 @@ private:
 	ComPtr<ID3DBlob> GetUtilityVertexShader(const std::string& source, const char* entry_point);
 	ComPtr<ID3DBlob> GetUtilityPixelShader(const std::string& source, const char* entry_point);
 
-	void FeedbackBarrier(const GSTexture12* texture);
+	void FeedbackBarrier(GSTexture12* texture);
 
 	bool CheckFeatures(const u32& vendor_id);
 	bool CreateNullTexture();

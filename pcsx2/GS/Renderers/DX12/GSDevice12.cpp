@@ -1560,6 +1560,11 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 	m_typed_casting_supported = SUCCEEDED(hr) && device_options3.CastingFullyTypedFormatSupported;
 	Console.WriteLnFmt("D3D12: Casting Fully Typed Formats: {}", m_typed_casting_supported ? "Supported" : "Not Supported");
 
+#if defined(WINRT_XBOX)
+	// Not supported on Xbox.
+	m_enhanced_barriers = false;
+	Console.WriteLn("D3D12: Enhanced Barriers: Not Supported");
+#else
 	D3D12_FEATURE_DATA_D3D12_OPTIONS12 device_options12 = {};
 	hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS12, &device_options12, sizeof(device_options12));
 	if (SUCCEEDED(hr))
@@ -1572,6 +1577,7 @@ bool GSDevice12::CheckFeatures(const u32& vendor_id)
 		Console.WriteLnFmt("D3D12: Failed to check for Enhanced Barriers: 0x{:08x}", static_cast<unsigned long>(hr));
 		m_enhanced_barriers = false;
 	}
+#endif
 
 	D3D12_FEATURE_DATA_D3D12_OPTIONS options{};
 	m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &options, sizeof(D3D12_FEATURE_DATA_D3D12_OPTIONS));
@@ -4373,7 +4379,7 @@ GSTexture12* GSDevice12::SetupPrimitiveTrackingDATE(GSHWDrawConfig& config, Pipe
 	return image;
 }
 
-void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
+void GSDevice12::FeedbackBarrier(GSTexture12* texture)
 {
 	if (m_enhanced_barriers)
 	{
@@ -4391,11 +4397,35 @@ void GSDevice12::FeedbackBarrier(const GSTexture12* texture)
 		// The only exception being the implicit reads for render target blending or depth testing.
 		// Thus, in addition to a barrier, we need to end the render pass.
 		EndRenderPass();
+#if defined(WINRT_XBOX)
+		if (texture->GetResourceState() == GSTexture12::ResourceState::RenderTarget)
+		{
+			ID3D12Resource* const res = texture->GetResource();
+			D3D12_RESOURCE_BARRIER barriers[2] = {};
+			barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barriers[0].Transition.pResource = res;
+			barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+			barriers[1].Transition.pResource = res;
+			barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+			barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
+			barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+			GetCommandList().list4->ResourceBarrier(2, barriers);
+		}
+		else
+		{
+			texture->TransitionToState(GSTexture12::ResourceState::PixelShaderResource);
+			texture->TransitionToState(GSTexture12::ResourceState::RenderTarget);
+		}
+#else
 		// Specify null for the after resource as both resources are used after the barrier.
 		// While this may also be true before the barrier, we only write using the main resource.
 		D3D12_RESOURCE_BARRIER barrier = {D3D12_RESOURCE_BARRIER_TYPE_ALIASING, D3D12_RESOURCE_BARRIER_FLAG_NONE};
 		barrier.Aliasing = {texture->GetResource(), nullptr};
 		GetCommandList().list4->ResourceBarrier(1, &barrier);
+#endif
 	}
 }
 
@@ -4782,17 +4812,24 @@ void GSDevice12::SendHWDraw(const PipelineSelector& pipe, const GSHWDrawConfig& 
 		return;
 	}
 
-	if (feedback_rt || feedback_depth)
+	const bool tex_feedback = config.tex_hazard == GSHWDrawConfig::TEX_HAZARD_RT;
+
+	if (feedback_rt || feedback_depth || tex_feedback)
 	{
 #ifdef PCSX2_DEVBUILD
 		if ((one_barrier || full_barrier) && !(config.IsFeedbackLoopRT(config.ps) || config.IsFeedbackLoopDepth(config.ps))) [[unlikely]]
 			Console.Warning("D3D12: Possible unnecessary barrier detected.");
 #endif
-		if ((one_barrier || full_barrier) && feedback_rt)
+		const bool rt_feedback = (one_barrier || full_barrier);
+#if defined(WINRT_XBOX)
+		if (draw_rt && tex_feedback && !rt_feedback)
+			FeedbackBarrier(draw_rt);
+#endif
+		if (rt_feedback && feedback_rt)
 			PSSetShaderResource(TEXTURE_RT, draw_rt, false, ResourceType::FBL);
-		if (config.tex_hazard == GSHWDrawConfig::TEX_HAZARD_RT)
+		if (tex_feedback)
 			PSSetShaderResource(TEXTURE_TEXTURE, draw_rt, false, ResourceType::FBL);
-		if ((one_barrier || full_barrier) && feedback_depth)
+		if (rt_feedback && feedback_depth)
 			PSSetShaderResource(TEXTURE_DEPTH, draw_ds, false, ResourceType::FBL);
 		
 		if (full_barrier)

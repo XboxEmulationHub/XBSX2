@@ -10,6 +10,7 @@
 #include <winrt/Windows.Gaming.Input.h>
 #include <winrt/Windows.Globalization.h>
 #include <winrt/Windows.Graphics.Display.Core.h>
+#include <winrt/Windows.Graphics.Display.h>
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Input.h>
@@ -24,6 +25,7 @@
 #include "common/Path.h"
 
 #include "pcsx2/CDVD/CDVDcommon.h"
+#include "pcsx2/GS/Renderers/Common/GSDevice.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/Host.h"
@@ -61,10 +63,19 @@ static bool s_display_mode_query_failed = false;
 static bool s_using_display_resolution = false;
 static bool s_output_resolution_logged = false;
 
-static void InitOutputResolution()
+static float GetDisplayScale()
 {
-	u32 max_width = 1920;
-	u32 max_height = 1080;
+	if (!s_corewind)
+		return 1.0f;
+
+	const auto info = winrt::Windows::Graphics::Display::DisplayInformation::GetForCurrentView();
+	return info ? info.RawPixelsPerViewPixel() : 1.0f;
+}
+
+static void GetMaxOutputResolution(u32* width, u32* height)
+{
+	*width = 1920;
+	*height = 1080;
 
 	GAMING_DEVICE_MODEL_INFORMATION info = {};
 	GetGamingDeviceModelInformation(&info);
@@ -76,15 +87,15 @@ static void InitOutputResolution()
 			// The Xbox One S can output to 4K but I don't have one to test on so we'll limit it to 1080p like the original Xbox One.
 			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE:
 			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_S:
-				max_width = 1920;
-				max_height = 1080;
+				*width = 1920;
+				*height = 1080;
 				break;
 
 			// The Series S can output to 4K but if you try to make a 4K Swap Chain the application will crash,
 			// so we limit it to 1440p.
 			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_S:
-				max_width = 2560;
-				max_height = 1440;
+				*width = 2560;
+				*height = 1440;
 				break;
 
 			case GAMING_DEVICE_DEVICE_ID_XBOX_ONE_X:
@@ -92,11 +103,18 @@ static void InitOutputResolution()
 			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X:
 			case GAMING_DEVICE_DEVICE_ID_XBOX_SERIES_X_DEVKIT:
 			default:
-				max_width = 3840;
-				max_height = 2160;
+				*width = 3840;
+				*height = 2160;
 				break;
 		}
 	}
+}
+
+static void InitOutputResolution()
+{
+	u32 max_width = 1920;
+	u32 max_height = 1080;
+	GetMaxOutputResolution(&max_width, &max_height);
 
 	u32 display_width = 0;
 	u32 display_height = 0;
@@ -113,6 +131,17 @@ static void InitOutputResolution()
 	else
 	{
 		s_display_mode_query_failed = true;
+	}
+
+	if (display_width == 0 || display_height == 0)
+	{
+		if (s_corewind)
+		{
+			const auto bounds = s_corewind->Bounds();
+			const float scale = GetDisplayScale();
+			display_width = static_cast<u32>(std::round(bounds.Width * scale));
+			display_height = static_cast<u32>(std::round(bounds.Height * scale));
+		}
 	}
 
 	if (display_width > 0 && display_height > 0)
@@ -949,11 +978,12 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 	const void Run()
 	{
+		CoreWindow window = CoreWindow::GetForCurrentThread();
+		s_corewind = &window;
+
 		InitOutputResolution();
 
-		CoreWindow window = CoreWindow::GetForCurrentThread();
 		window.Activate();
-		s_corewind = &window;
 
 		auto navigation = winrt::Windows::UI::Core::SystemNavigationManager::GetForCurrentView();
 		navigation.BackRequested(
@@ -1106,6 +1136,28 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 
 		Host::RunOnCPUThread([wheel_delta]() {
 			InputManager::UpdatePointerRelativeDelta(0, InputPointerAxis::WheelY, wheel_delta);
+		});
+	}
+	
+	void OnSizeChanged(const IInspectable&, const winrt::Windows::UI::Core::WindowSizeChangedEventArgs& args)
+	{
+		const float scale = GetDisplayScale();
+		const u32 w = static_cast<u32>(std::round(args.Size().Width * scale));
+		const u32 h = static_cast<u32>(std::round(args.Size().Height * scale));
+		if (w == 0 || h == 0)
+			return;
+
+		u32 max_width = 0, max_height = 0;
+		GetMaxOutputResolution(&max_width, &max_height);
+		s_xbox_output_width = std::min(w, max_width);
+		s_xbox_output_height = std::min(h, max_height);
+
+		Host::RunOnGSThread([]() {
+			if (!g_gs_device)
+				return;
+
+			g_gs_device->ResizeWindow(s_xbox_output_width, s_xbox_output_height, 1.0f);
+			ImGuiManager::WindowResized();
 		});
 	}
 };

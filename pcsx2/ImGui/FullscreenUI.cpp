@@ -345,6 +345,22 @@ bool FullscreenUI::Initialize()
 
 	LoadCustomBackground();
 
+#if defined(WINRT_XBOX)
+	if (VMManager::HasValidVM() || VMManager::GetState() == VMState::Initializing)
+	{
+		UpdateGameDetails(VMManager::GetDiscPath(), VMManager::GetDiscSerial(), VMManager::GetTitle(s_prefer_english_titles), VMManager::GetDiscCRC(),
+			VMManager::GetCurrentCRC());
+
+		if (!s_pause_menu_was_open)
+			s_current_main_window = MainWindowType::None;
+	}
+	else
+	{
+		const bool open_main_window = s_current_main_window == MainWindowType::None;
+		if (open_main_window)
+			ReturnToMainWindow();
+	}
+#else
 	if (VMManager::HasValidVM())
 	{
 		UpdateGameDetails(VMManager::GetDiscPath(), VMManager::GetDiscSerial(), VMManager::GetTitle(s_prefer_english_titles), VMManager::GetDiscCRC(),
@@ -356,6 +372,7 @@ bool FullscreenUI::Initialize()
 		if (open_main_window)
 			ReturnToMainWindow();
 	}
+#endif
 
 	ForceKeyNavEnabled();
 	return true;
@@ -418,6 +435,12 @@ void FullscreenUI::CheckForConfigChanges(const Pcsx2Config& old_config)
 
 void FullscreenUI::OnVMStarted()
 {
+#if defined(WINRT_XBOX)
+	MTGS::RunOnGSThread([]() {
+		s_current_main_window = MainWindowType::None;
+		QueueResetFocus(FocusResetType::WindowChanged);
+	});
+#else
 	if (!IsInitialized())
 		return;
 
@@ -428,6 +451,7 @@ void FullscreenUI::OnVMStarted()
 		s_current_main_window = MainWindowType::None;
 		QueueResetFocus(FocusResetType::WindowChanged);
 	});
+#endif
 }
 
 void FullscreenUI::OnVMDestroyed()
@@ -785,7 +809,11 @@ void FullscreenUI::ReturnToMainWindow()
 {
 	ClosePauseMenu();
 
+#if defined(WINRT_XBOX)
+	if (VMManager::HasValidVM() || VMManager::GetState() == VMState::Initializing)
+#else
 	if (VMManager::HasValidVM())
+#endif
 	{
 		s_current_main_window = MainWindowType::None;
 		return;
@@ -897,6 +925,11 @@ void FullscreenUI::DoStartPath(const std::string& path, std::optional<s32> state
 	params.state_index = state_index;
 	params.fast_boot = fast_boot;
 
+#if defined(WINRT_XBOX)
+	// switch to nothing, we'll get brought back if init fails
+	s_current_main_window = MainWindowType::None;
+#endif
+
 	// switch to nothing, we'll get brought back if init fails
 	Host::RunOnCPUThread([params = std::move(params)]() {
 		DoVMInitialize(std::move(params), false);
@@ -931,6 +964,11 @@ void FullscreenUI::DoStartBIOS()
 
 void FullscreenUI::DoStartDisc(const std::string& drive)
 {
+#if defined(WINRT_XBOX)
+	// switch to nothing, we'll get brought back if init fails
+	s_current_main_window = MainWindowType::None;
+#endif
+
 	Host::RunOnCPUThread([drive]() {
 		if (VMManager::HasValidVM())
 			return;

@@ -1440,7 +1440,7 @@ void FullscreenUI::DrawLandingWindow()
 {
 	ImVec2 menu_pos, menu_size;
 	DrawLandingTemplate(&menu_pos, &menu_size);
-	const char version_txt[] = APP_VERSION; 
+	const char* version_txt = BuildVersion::AppVersion; 
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
@@ -3538,14 +3538,14 @@ void FullscreenUI::DrawAboutWindow()
 		DrawListSvgTexture(ImGui::GetWindowDrawList(), s_banner_texture.get(), image_rect.Min, image_rect.Max);
 
 		ImGui::SetCursorPosY(start_y + image_size.y + LayoutScale(2.0f));
-		static const std::string version_text = fmt::format(FSUI_FSTR("Version: {}"), APP_VERSION);
+		static const std::string version_text = fmt::format(FSUI_FSTR("Version: {}"), BuildVersion::AppVersion);
 		const float cursor_start_x = ImGui::GetCursorPosX();
 		const float work_width = ImGui::GetCurrentWindow()->WorkRect.GetWidth();
 		const float version_center_x = cursor_start_x + ((work_width - ImGui::CalcTextSize(version_text.c_str()).x) * 0.5f);
 		ImGui::SetCursorPosX(version_center_x);
 		ImGui::TextUnformatted(version_text.c_str());
 #if defined(WINRT_XBOX)
-		static const std::string pcsx2_base_text = fmt::format("PCSX2 v{}.{}.{}", BuildVersion::GitTagHi, BuildVersion::GitTagMid, BuildVersion::GitTagLo);
+		static const std::string pcsx2_base_text = fmt::format("PCSX2 v{}", BuildVersion::Pcsx2BaseVersion);
 		const float pcsx2_x = cursor_start_x + work_width - ImGui::CalcTextSize(pcsx2_base_text.c_str()).x;
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pcsx2_x);

@@ -71,7 +71,4 @@ namespace Host
 
 	/// Did Playstation in the currently selected locale use circle as confirm
 	bool LocaleCircleConfirm();
-} // namespace Host
-
-// Change this to change the version in the about screen.
-#define APP_VERSION "2.0.9.0"
+} // namespace Host

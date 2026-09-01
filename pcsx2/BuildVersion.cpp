@@ -6,7 +6,7 @@
 namespace BuildVersion
 {
 	// XBSX2 app version.
-	const char* AppVersion = "2.0.9.0";
+	const char* AppVersion = "2.0.9.1";
 
 	// Upstream PCSX2 version this build is based on.
 	const char* Pcsx2BaseVersion = "2.8.1";

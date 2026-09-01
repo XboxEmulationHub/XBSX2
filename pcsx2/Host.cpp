@@ -160,7 +160,7 @@ std::string Host::GetHTTPUserAgent()
 #if !defined(WINRT_XBOX)
 	return fmt::format("PCSX2 {} ({})", BuildVersion::GitRev, GetOSVersionString());
 #else
-	return fmt::format("XBSX2 {} ({})", BuildVersion::GitRev, GetConsoleModelString());
+	return fmt::format("XBSX2 v{} ({})", BuildVersion::AppVersion, GetConsoleModelString());
 #endif
 }
 

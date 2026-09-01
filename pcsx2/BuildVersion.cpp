@@ -5,6 +5,12 @@
 
 namespace BuildVersion
 {
+	// XBSX2 app version.
+	const char* AppVersion = "2.0.9.0";
+
+	// Upstream PCSX2 version this build is based on.
+	const char* Pcsx2BaseVersion = "2.8.1";
+
 	const char* GitTag = GIT_TAG;
 	bool GitTaggedCommit = GIT_TAGGED_COMMIT;
 	int GitTagHi = GIT_TAG_HI;

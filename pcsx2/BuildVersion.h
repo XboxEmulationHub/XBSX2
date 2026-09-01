@@ -7,6 +7,12 @@
 // recompile each object file using it when said information is updated.
 namespace BuildVersion
 {
+	// XBSX2 app version.
+	extern const char* AppVersion;
+
+	// Upstream PCSX2 version this build is based on.
+	extern const char* Pcsx2BaseVersion;
+
 	extern const char* GitTag;
 	extern bool GitTaggedCommit;
 	extern int GitTagHi;

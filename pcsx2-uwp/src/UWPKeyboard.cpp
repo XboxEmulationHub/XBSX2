@@ -1,4 +1,4 @@
-// SPDX-CopyrightText: 2026 SternXD
+// SPDX-CopyrightText: 2002-2026 PCSX2 Dev Team
 // SPDX-License-Identifier: GPL-3.0+
 
 #include "pcsx2/PrecompiledHeader.h"
@@ -7,6 +7,8 @@
 
 #include "IconsPromptFont.h"
 #include "UWPKeyboard.h"
+
+#include "pcsx2/Input/InputManager.h"
 
 namespace UWPKeyboard
 {
@@ -189,3 +191,18 @@ namespace UWPKeyboard
 		return CodeToName(code).has_value();
 	}
 } // namespace UWPKeyboard
+
+std::optional<u32> InputManager::ConvertHostKeyboardStringToCode(const std::string_view str)
+{
+	return UWPKeyboard::NameToCode(str);
+}
+
+std::optional<std::string> InputManager::ConvertHostKeyboardCodeToString(u32 code)
+{
+	return UWPKeyboard::CodeToName(code);
+}
+
+const char* InputManager::ConvertHostKeyboardCodeToIcon(u32 code)
+{
+	return UWPKeyboard::CodeToIcon(code);
+}

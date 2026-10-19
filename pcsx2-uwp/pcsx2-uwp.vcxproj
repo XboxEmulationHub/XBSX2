@@ -153,6 +153,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\pcsx2\PrecompiledHeader.h" />
+    <ClInclude Include="src\CPUEventQueue.h" />
+    <ClInclude Include="src\UWPHost.h" />
     <ClInclude Include="src\UWPKeyboard.h" />
     <ClInclude Include="src\UWPUtils.h" />
   </ItemGroup>
@@ -164,6 +166,8 @@
   <ItemGroup>
     <ClCompile Include="..\pcsx2\PrecompiledHeader.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\UWPHost.cpp" />
+    <ClCompile Include="src\Translations.cpp" />
     <ClCompile Include="src\UWPKeyboard.cpp" />
     <ClCompile Include="src\UWPSound.cpp" />
   </ItemGroup>
@@ -203,6 +207,12 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\pcsx2-qt\Translations\*.ts">
+      <Link>translations\%(Filename)%(Extension)</Link>
+      <TargetPath>translations\%(Filename)%(Extension)</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <DeploymentContent>true</DeploymentContent>
+    </Content>
     <Content Include="$(DepsBinDir)\*.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

@@ -24,6 +24,12 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\UWPHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Translations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\UWPKeyboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -35,7 +41,13 @@
     <ClInclude Include="..\pcsx2\PrecompiledHeader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\CPUEventQueue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="src\UWPKeyboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UWPHost.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\UWPUtils.h">

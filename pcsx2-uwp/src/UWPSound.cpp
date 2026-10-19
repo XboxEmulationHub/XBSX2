@@ -1,22 +1,29 @@
 // SPDX-FileCopyrightText: 2026 SternXD
 // SPDX-License-Identifier: GPL-3.0+
 
+#include "UWPUtils.h"
+
 #include "pcsx2/PrecompiledHeader.h"
 
+#include "common/BitUtils.h"
+#include "common/Console.h"
 #include "common/FileSystem.h"
 #include "common/Path.h"
+#include "common/Threading.h"
 #include "pcsx2/Config.h"
-#include "UWPUtils.h"
 
 #include <winrt/base.h>
 #include <xaudio2.h>
 
+#include <atomic>
+#include <cstring>
+#include <memory>
+#include <mutex>
 #include <unordered_map>
 
 struct CachedSound final
 {
-	WAVEFORMATEXTENSIBLE fmt = {};
-	bool is_extensible = false;
+	WAVEFORMATEXTENSIBLE format = {};
 	std::vector<u8> file;
 	size_t data_offset = 0;
 	u32 data_size = 0;
@@ -24,67 +31,163 @@ struct CachedSound final
 
 struct PlaybackContext final
 {
+	~PlaybackContext()
+	{
+		if (voice)
+			voice->DestroyVoice();
+	}
+
 	IXAudio2SourceVoice* voice = nullptr;
 	std::shared_ptr<CachedSound> sound;
+	std::atomic<bool> completed{false};
 };
 
-struct VoiceCallback final : IXAudio2VoiceCallback
+class SoundPlayer final : public IXAudio2VoiceCallback
 {
-	void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) override {}
-	void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
-	void STDMETHODCALLTYPE OnStreamEnd() override {}
-	void STDMETHODCALLTYPE OnBufferStart(void*) override {}
-	void STDMETHODCALLTYPE OnLoopEnd(void*) override {}
-	void STDMETHODCALLTYPE OnVoiceError(void* pContext, HRESULT) override { Cleanup(pContext); }
-	void STDMETHODCALLTYPE OnBufferEnd(void* pContext) override { Cleanup(pContext); }
+public:
+	~SoundPlayer()
+	{
+		if (m_cleanup_thread.Joinable())
+		{
+			m_stopping.store(true);
+			m_cleanup_sema.NotifyOfWork();
+			m_cleanup_thread.Join();
+		}
+		if (m_mastering_voice)
+			m_mastering_voice->DestroyVoice();
+	}
+
+	bool Play(std::shared_ptr<CachedSound> sound)
+	{
+		auto ctx = std::make_unique<PlaybackContext>();
+		ctx->sound = std::move(sound);
+		std::lock_guard lock(m_mutex);
+		if (!Initialize())
+			return false;
+
+		const HRESULT hr = m_xaudio->CreateSourceVoice(&ctx->voice, &ctx->sound->format.Format, 0, XAUDIO2_DEFAULT_FREQ_RATIO, this);
+		if (FAILED(hr))
+		{
+			Console.WarningFmt("UWPSound: CreateSourceVoice() failed: 0x{:08X}", static_cast<u32>(hr));
+			return false;
+		}
+
+		XAUDIO2_BUFFER buffer = {};
+		buffer.Flags = XAUDIO2_END_OF_STREAM;
+		buffer.AudioBytes = ctx->sound->data_size;
+		buffer.pAudioData = ctx->sound->file.data() + ctx->sound->data_offset;
+		buffer.pContext = ctx.get();
+		if (FAILED(ctx->voice->SubmitSourceBuffer(&buffer)) || FAILED(ctx->voice->Start(0)))
+			return false;
+
+		m_playbacks.push_back(std::move(ctx));
+		return true;
+	}
+
+	void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32) noexcept override {}
+	void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() noexcept override {}
+	void STDMETHODCALLTYPE OnStreamEnd() noexcept override {}
+	void STDMETHODCALLTYPE OnBufferStart(void*) noexcept override {}
+	void STDMETHODCALLTYPE OnLoopEnd(void*) noexcept override {}
+	void STDMETHODCALLTYPE OnVoiceError(void* context, HRESULT) noexcept override { Complete(context); }
+	void STDMETHODCALLTYPE OnBufferEnd(void* context) noexcept override { Complete(context); }
 
 private:
-	static void Cleanup(void* pContext)
+	bool Initialize()
 	{
-		auto* ctx = static_cast<PlaybackContext*>(pContext);
-		if (ctx)
+		if (m_engine_attempted)
+			return m_cleanup_thread.Joinable();
+		m_engine_attempted = true;
+
+		const HRESULT hr = XAudio2Create(m_xaudio.put(), 0, XAUDIO2_DEFAULT_PROCESSOR);
+		if (FAILED(hr))
 		{
-			if (ctx->voice)
-				ctx->voice->DestroyVoice();
-			delete ctx;
+			Console.ErrorFmt("UWPSound: XAudio2Create() failed: 0x{:08X}", static_cast<u32>(hr));
+			return false;
+		}
+		const HRESULT mastering_hr = m_xaudio->CreateMasteringVoice(&m_mastering_voice);
+		if (FAILED(mastering_hr))
+		{
+			Console.ErrorFmt("UWPSound: CreateMasteringVoice() failed: 0x{:08X}", static_cast<u32>(mastering_hr));
+			return false;
+		}
+
+		if (!m_cleanup_thread.Start([this]() { CleanupThread(); }))
+		{
+			Console.Error("UWPSound: Failed to start cleanup thread.");
+			return false;
+		}
+		return true;
+	}
+
+	void Complete(void* context)
+	{
+		if (!context)
+			return;
+
+		// DestroyVoice() cannot be called from an XAudio2 callback.
+		static_cast<PlaybackContext*>(context)->completed.store(true);
+		m_cleanup_sema.NotifyOfWork();
+	}
+
+	void CleanupThread()
+	{
+		Threading::SetNameOfCurrentThread("UWP Sound Cleanup");
+
+		for (;;)
+		{
+			m_cleanup_sema.WaitForWork();
+
+			std::vector<std::unique_ptr<PlaybackContext>> finished;
+			const bool stopping = m_stopping.load();
+			{
+				std::lock_guard lock(m_mutex);
+				for (auto it = m_playbacks.begin(); it != m_playbacks.end();)
+				{
+					if (stopping || (*it)->completed.load())
+					{
+						finished.push_back(std::move(*it));
+						it = m_playbacks.erase(it);
+					}
+					else
+					{
+						++it;
+					}
+				}
+			}
+			if (stopping)
+				return;
 		}
 	}
+
+	std::mutex m_mutex;
+	winrt::com_ptr<IXAudio2> m_xaudio;
+	IXAudio2MasteringVoice* m_mastering_voice = nullptr;
+	Threading::WorkSema m_cleanup_sema;
+	Threading::Thread m_cleanup_thread;
+	std::atomic<bool> m_stopping{false};
+	bool m_engine_attempted = false;
+	std::vector<std::unique_ptr<PlaybackContext>> m_playbacks;
 };
 
-static std::mutex s_mutex;
+static std::mutex s_cache_mutex;
 static std::unordered_map<std::string, std::shared_ptr<CachedSound>> s_cache;
-static winrt::com_ptr<IXAudio2> s_xaudio;
-static IXAudio2MasteringVoice* s_mastering_voice = nullptr;
-static bool s_engine_attempted = false;
-static VoiceCallback s_voice_callback;
 
 // clang-format off
-static constexpr u32 FOURCC_RIFF = 0x46464952;	// "RIFF"
-static constexpr u32 FOURCC_WAVE = 0x45564157;	// "WAVE"
-static constexpr u32 FOURCC_FMT	 = 0x20746D66;	// "fmt"
-static constexpr u32 FOURCC_DATA = 0x61746164;	// "data"
+static constexpr u32 FOURCC_RIFF = 0x46464952; // "RIFF"
+static constexpr u32 FOURCC_WAVE = 0x45564157; // "WAVE"
+static constexpr u32 FOURCC_FMT  = 0x20746D66; // "fmt "
+static constexpr u32 FOURCC_DATA = 0x61746164; // "data"
 // clang-format on
 
-static u32 ReadU32LE(const u8* p)
+static bool ParseWav(CachedSound& sound)
 {
-	return (static_cast<u32>(p[0]) << 0) | (static_cast<u32>(p[1]) << 8) | (static_cast<u32>(p[2]) << 16) |
-	       (static_cast<u32>(p[3]) << 24);
-}
-
-static u16 ReadU16LE(const u8* p)
-{
-	return static_cast<u16>((static_cast<u16>(p[0]) << 0) | (static_cast<u16>(p[1]) << 8));
-}
-
-static bool ParseWav(const std::vector<u8>& file, WAVEFORMATEXTENSIBLE* fmt, bool* is_extensible, size_t* data_offset, u32* data_size)
-{
-	if (!fmt || !is_extensible || !data_offset || !data_size)
-		return false;
+	const std::vector<u8>& file = sound.file;
 	if (file.size() < 12)
 		return false;
 
 	const u8* const base = file.data();
-	if (ReadU32LE(base) != FOURCC_RIFF || ReadU32LE(base + 8) != FOURCC_WAVE)
+	if (GetBufferU32(base, 0) != FOURCC_RIFF || GetBufferU32(base, 8) != FOURCC_WAVE)
 		return false;
 
 	bool have_fmt = false;
@@ -93,8 +196,8 @@ static bool ParseWav(const std::vector<u8>& file, WAVEFORMATEXTENSIBLE* fmt, boo
 
 	while (pos + 8 <= file.size())
 	{
-		const u32 id = ReadU32LE(base + pos);
-		const u32 size = ReadU32LE(base + pos + 4);
+		const u32 id = GetBufferU32(base + pos, 0);
+		const u32 size = GetBufferU32(base + pos, 4);
 		const size_t payload = pos + 8;
 		if (payload + size > file.size())
 			return false;
@@ -104,34 +207,32 @@ static bool ParseWav(const std::vector<u8>& file, WAVEFORMATEXTENSIBLE* fmt, boo
 			if (size < 16)
 				return false;
 
-			const u16 format_tag = ReadU16LE(base + payload + 0);
+			const u8* const chunk = base + payload;
+			const u16 format_tag = GetBufferU16(chunk, 0);
 			if (format_tag == WAVE_FORMAT_EXTENSIBLE)
 			{
 				if (size < sizeof(WAVEFORMATEXTENSIBLE))
 					return false;
 
-				std::memcpy(fmt, base + payload, sizeof(WAVEFORMATEXTENSIBLE));
-				*is_extensible = true;
+				std::memcpy(&sound.format, chunk, sizeof(WAVEFORMATEXTENSIBLE));
 			}
 			else
 			{
-				std::memset(fmt, 0, sizeof(WAVEFORMATEXTENSIBLE));
-				fmt->Format.wFormatTag = format_tag;
-				fmt->Format.nChannels = ReadU16LE(base + payload + 2);
-				fmt->Format.nSamplesPerSec = ReadU32LE(base + payload + 4);
-				fmt->Format.nAvgBytesPerSec = ReadU32LE(base + payload + 8);
-				fmt->Format.nBlockAlign = ReadU16LE(base + payload + 12);
-				fmt->Format.wBitsPerSample = ReadU16LE(base + payload + 14);
-				fmt->Format.cbSize = 0;
-				*is_extensible = false;
+				sound.format = {};
+				sound.format.Format.wFormatTag = format_tag;
+				sound.format.Format.nChannels = GetBufferU16(chunk, 2);
+				sound.format.Format.nSamplesPerSec = GetBufferU32(chunk, 4);
+				sound.format.Format.nAvgBytesPerSec = GetBufferU32(chunk, 8);
+				sound.format.Format.nBlockAlign = GetBufferU16(chunk, 12);
+				sound.format.Format.wBitsPerSample = GetBufferU16(chunk, 14);
 			}
 
 			have_fmt = true;
 		}
 		else if (id == FOURCC_DATA)
 		{
-			*data_offset = payload;
-			*data_size = size;
+			sound.data_offset = payload;
+			sound.data_size = size;
 			have_data = true;
 		}
 
@@ -141,89 +242,44 @@ static bool ParseWav(const std::vector<u8>& file, WAVEFORMATEXTENSIBLE* fmt, boo
 	return have_fmt && have_data;
 }
 
-static bool EnsureXAudio2()
+static std::shared_ptr<CachedSound> GetOrLoadSound(const std::string& path)
 {
-	std::lock_guard<std::mutex> lock(s_mutex);
-	if (s_engine_attempted)
-		return static_cast<bool>(s_xaudio) && (s_mastering_voice != nullptr);
-
-	s_engine_attempted = true;
-	if (FAILED(XAudio2Create(s_xaudio.put(), 0, XAUDIO2_DEFAULT_PROCESSOR)))
-		return false;
-	if (FAILED(s_xaudio->CreateMasteringVoice(&s_mastering_voice)))
 	{
-		s_xaudio = nullptr;
-		return false;
-	}
-
-	return true;
-}
-
-static std::shared_ptr<CachedSound> GetOrLoadSound(std::string_view full_path)
-{
-	const std::string path_str(full_path);
-	{
-		std::lock_guard<std::mutex> lock(s_mutex);
-		auto it = s_cache.find(path_str);
+		std::lock_guard lock(s_cache_mutex);
+		const auto it = s_cache.find(path);
 		if (it != s_cache.end())
 			return it->second;
 	}
 
-	auto file = FileSystem::ReadBinaryFile(path_str.c_str());
-	if (!file.has_value())
-		return {};
-
-	auto sound = std::make_shared<CachedSound>();
-	sound->file = std::move(file.value());
-	if (!ParseWav(sound->file, &sound->fmt, &sound->is_extensible, &sound->data_offset, &sound->data_size))
-		return {};
-	if (sound->data_offset + sound->data_size > sound->file.size())
-		return {};
-
+	auto file = FileSystem::ReadBinaryFile(path.c_str());
+	if (!file)
 	{
-		std::lock_guard<std::mutex> lock(s_mutex);
-		auto [it, inserted] = s_cache.emplace(path_str, sound);
-		if (!inserted)
-			return it->second;
+		Console.WarningFmt("UWPSound: Failed to read WAV file '{}'", path);
+		return {};
 	}
 
-	return sound;
+	auto sound = std::make_shared<CachedSound>();
+	sound->file = std::move(*file);
+	if (!ParseWav(*sound))
+	{
+		Console.WarningFmt("UWPSound: Invalid WAV file '{}'", path);
+		return {};
+	}
+
+	std::lock_guard lock(s_cache_mutex);
+	return s_cache.emplace(path, sound).first->second;
 }
 
 bool UWP::PlaySoundAsync(const char* path)
 {
 	if (!path || path[0] == '\0')
 		return false;
-	if (!EnsureXAudio2())
-		return false;
 
-	const std::string fullPath = Path::IsAbsolute(path) ? path : Path::Combine(EmuFolders::Resources, path);
-	auto sound = GetOrLoadSound(fullPath);
+	const std::string full_path = Path::IsAbsolute(path) ? path : Path::Combine(EmuFolders::Resources, path);
+	auto sound = GetOrLoadSound(full_path);
 	if (!sound)
 		return false;
 
-	const WAVEFORMATEX* fmt = sound->is_extensible ? reinterpret_cast<const WAVEFORMATEX*>(&sound->fmt) : &sound->fmt.Format;
-
-	IXAudio2SourceVoice* voice = nullptr;
-	if (FAILED(s_xaudio->CreateSourceVoice(&voice, fmt, 0, XAUDIO2_DEFAULT_FREQ_RATIO, &s_voice_callback)))
-		return false;
-
-	auto* ctx = new PlaybackContext();
-	ctx->voice = voice;
-	ctx->sound = std::move(sound);
-
-	XAUDIO2_BUFFER buffer = {};
-	buffer.Flags = XAUDIO2_END_OF_STREAM;
-	buffer.AudioBytes = ctx->sound->data_size;
-	buffer.pAudioData = reinterpret_cast<const BYTE*>(ctx->sound->file.data() + ctx->sound->data_offset);
-	buffer.pContext = ctx;
-
-	if (FAILED(voice->SubmitSourceBuffer(&buffer)) || FAILED(voice->Start(0)))
-	{
-		voice->DestroyVoice();
-		delete ctx;
-		return false;
-	}
-
-	return true;
+	static SoundPlayer player;
+	return player.Play(std::move(sound));
 }

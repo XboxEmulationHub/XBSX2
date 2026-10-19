@@ -9,6 +9,10 @@
 #include "common/Threading.h"
 #include "common/WindowInfo.h"
 
+#ifdef WINRT_XBOX
+#include "pcsx2-uwp/src/UWPUtils.h"
+#endif
+
 #include <mmsystem.h>
 #include <timeapi.h>
 #include <VersionHelpers.h>
@@ -164,8 +168,12 @@ void Common::DetachMousePositionCb()
 
 bool Common::PlaySoundAsync(const char* path)
 {
+#ifdef WINRT_XBOX
+	return UWP::PlaySoundAsync(path);
+#else
 	const std::wstring wpath = FileSystem::GetWin32Path(path);
 	return PlaySoundW(wpath.c_str(), NULL, SND_ASYNC | SND_NODEFAULT);
+#endif
 }
 
 void Threading::Sleep(int ms)

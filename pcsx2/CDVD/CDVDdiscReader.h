@@ -39,6 +39,7 @@ class IOCtlSrc
 #if defined(_WIN32)
 	HANDLE m_device = INVALID_HANDLE_VALUE;
 	mutable std::mutex m_lock;
+	void* m_xbox = nullptr; // Xbox (UWP) build: the console's drive, see Windows/IOCtlSrcXbox.inl
 #else
 	int m_device = -1;
 #endif

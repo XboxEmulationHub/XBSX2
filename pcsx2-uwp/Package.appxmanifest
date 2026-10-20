@@ -64,6 +64,8 @@
 		<rescap:Capability Name="runFullTrust" />
 		<rescap:Capability Name="broadFileSystemAccess" />
 		<rescap:Capability Name="expandedResources" />
+		<DeviceCapability Name="optical" />
+		<DeviceCapability Name="53f56308-b6bf-11d0-94f2-00a0c91efb8b" />
 	</Capabilities>
 
 </Package>

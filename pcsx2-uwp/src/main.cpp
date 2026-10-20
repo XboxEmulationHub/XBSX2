@@ -6,6 +6,7 @@
 #include "UWPHost.h"
 #include "UWPKeyboard.h"
 
+#include "pcsx2/CDVD/CDVDcommon.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
 #include "pcsx2/Input/InputManager.h"
@@ -127,6 +128,9 @@ struct App : implements<App, IFrameworkViewSource, IFrameworkView>
 		if (!gamePath.empty())
 		{
 			VMBootParameters params;
+			// "disc:" boots the disc in the console's drive.
+			if (gamePath == "disc:")
+				params.source_type = CDVD_SourceType::Disc;
 			params.filename = std::move(gamePath);
 			if (g_emu_thread)
 				g_emu_thread->startVM(std::move(params));

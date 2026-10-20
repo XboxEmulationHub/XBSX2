@@ -23,6 +23,12 @@
 
 #include "fmt/format.h"
 
+#if defined(WINRT_XBOX)
+
+#include "IOCtlSrcXbox.inl"
+
+#else
+
 IOCtlSrc::IOCtlSrc(std::string filename)
 	: m_filename(std::move(filename))
 {
@@ -348,3 +354,5 @@ bool IOCtlSrc::DiscReady()
 
 	return !!m_sectors;
 }
+
+#endif // WINRT_XBOX

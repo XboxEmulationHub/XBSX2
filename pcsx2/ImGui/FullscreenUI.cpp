@@ -1457,6 +1457,9 @@ void FullscreenUI::DrawLandingWindow()
 		if (HorizontalMenuSvgItem("fullscreenui/start-game.svg", FSUI_CSTR("Start Game"),
 				FSUI_CSTR("Launch a game from a file, disc, or starts the console without any disc inserted.")))
 		{
+#if defined(WINRT_XBOX)
+			s_has_disc_drive = !GetOpticalDriveList().empty();
+#endif
 			s_current_main_window = MainWindowType::StartGame;
 			QueueResetFocus(FocusResetType::WindowChanged);
 		}
@@ -1534,7 +1537,7 @@ void FullscreenUI::DrawStartGameWindow()
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("start_game_window", menu_pos, menu_size, 4))
+	if (BeginHorizontalMenu("start_game_window", menu_pos, menu_size, s_has_disc_drive ? 4 : 3))
 	{
 		ResetFocusHere();
 
@@ -1543,13 +1546,11 @@ void FullscreenUI::DrawStartGameWindow()
 		{
 			DoStartFile();
 		}
-#ifndef WINRT_XBOX // XBox/UWP: No disc support
-		if (HorizontalMenuSvgItem("fullscreenui/drive-cdrom.svg", FSUI_CSTR("Start Disc"),
+		if (s_has_disc_drive && HorizontalMenuSvgItem("fullscreenui/drive-cdrom.svg", FSUI_CSTR("Start Disc"),
 				FSUI_CSTR("Start a game from a disc in your PC's DVD drive.")))
 		{
 			DoStartDisc();
 		}
-#endif // !WINRT_XBOX
 		if (HorizontalMenuSvgItem("fullscreenui/start-bios.svg", FSUI_CSTR("Start BIOS"),
 				FSUI_CSTR("Start the console without any disc inserted.")))
 		{

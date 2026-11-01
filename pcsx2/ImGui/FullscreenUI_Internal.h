@@ -236,6 +236,7 @@ namespace FullscreenUI
 	inline PauseSubMenu s_current_pause_submenu = PauseSubMenu::None;
 	inline bool s_initialized = false;
 	inline bool s_tried_to_initialize = false;
+	inline bool s_has_disc_drive = true;
 	inline bool s_pause_menu_was_open = false;
 	inline bool s_was_paused_on_quick_menu_open = false;
 	inline bool s_about_window_open = false;

@@ -23,6 +23,19 @@
 
 #include "fmt/format.h"
 
+#if defined(WINRT_XBOX)
+#include "IOCtlSrcXbox.h"
+namespace DriveAccess = XboxDiscDrive;
+#else
+namespace DriveAccess
+{
+	using ::CloseHandle;
+	using ::DeviceIoControl;
+	using ::ReadFile;
+	using ::SetFilePointerEx;
+} // namespace DriveAccess
+#endif
+
 IOCtlSrc::IOCtlSrc(std::string filename)
 	: m_filename(std::move(filename))
 {
@@ -33,7 +46,7 @@ IOCtlSrc::~IOCtlSrc()
 	if (m_device != INVALID_HANDLE_VALUE)
 	{
 		SetSpindleSpeed(true);
-		CloseHandle(m_device);
+		DriveAccess::CloseHandle(m_device);
 	}
 }
 
@@ -42,21 +55,27 @@ IOCtlSrc::~IOCtlSrc()
 bool IOCtlSrc::Reopen(Error* error)
 {
 	if (m_device != INVALID_HANDLE_VALUE)
-		CloseHandle(m_device);
+		DriveAccess::CloseHandle(m_device);
 
+#if defined(WINRT_XBOX)
+	m_device = XboxDiscDrive::Open(error);
+#else
 	// SPTI only works if the device is opened with GENERIC_WRITE access.
 	m_device = CreateFileA(m_filename.c_str(), GENERIC_READ | GENERIC_WRITE,
 						  FILE_SHARE_READ, nullptr, OPEN_EXISTING,
 						  FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+#endif
 	if (m_device == INVALID_HANDLE_VALUE)
 	{
+#if !defined(WINRT_XBOX)
 		Error::SetWin32(error, GetLastError());
+#endif
 		return false;
 	}
 
 	DWORD unused;
 	// Required to read from layer 1 of Dual layer DVDs
-	DeviceIoControl(m_device, FSCTL_ALLOW_EXTENDED_DASD_IO, nullptr, 0, nullptr,
+	DriveAccess::DeviceIoControl(m_device, FSCTL_ALLOW_EXTENDED_DASD_IO, nullptr, 0, nullptr,
 					0, &unused, nullptr);
 
 	if (ReadDVDInfo() || ReadCDInfo())
@@ -77,7 +96,7 @@ void IOCtlSrc::SetSpindleSpeed(bool restore_defaults) const
 	CDROM_SET_SPEED s{CdromSetSpeed, speed, speed, CdromDefaultRotation};
 
 	DWORD unused;
-	if (DeviceIoControl(m_device, IOCTL_CDROM_SET_SPEED, &s, sizeof(s),
+	if (DriveAccess::DeviceIoControl(m_device, IOCTL_CDROM_SET_SPEED, &s, sizeof(s),
 						nullptr, 0, &unused, nullptr))
 	{
 		if (!restore_defaults)
@@ -115,7 +134,7 @@ bool IOCtlSrc::ReadSectors2048(u32 sector, u32 count, u8* buffer) const
 	LARGE_INTEGER offset;
 	offset.QuadPart = sector * 2048ULL;
 
-	if (!SetFilePointerEx(m_device, offset, nullptr, FILE_BEGIN))
+	if (!DriveAccess::SetFilePointerEx(m_device, offset, nullptr, FILE_BEGIN))
 	{
 		Console.Error(fmt::format(" * CDVD SetFilePointerEx failed: sector {}: error {}",
 				sector, GetLastError()));
@@ -124,7 +143,7 @@ bool IOCtlSrc::ReadSectors2048(u32 sector, u32 count, u8* buffer) const
 
 	const DWORD bytes_to_read = 2048 * count;
 	DWORD bytes_read;
-	if (ReadFile(m_device, buffer, bytes_to_read, &bytes_read, nullptr))
+	if (DriveAccess::ReadFile(m_device, buffer, bytes_to_read, &bytes_read, nullptr))
 	{
 		if (bytes_read == bytes_to_read)
 			return true;
@@ -181,7 +200,7 @@ bool IOCtlSrc::ReadSectors2352(u32 sector, u32 count, u8* buffer) const
 		sptd.info.SenseInfoLength = sizeof(sptd.sense_buffer);
 
 		DWORD unused;
-		if (DeviceIoControl(m_device, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptd,
+		if (DriveAccess::DeviceIoControl(m_device, IOCTL_SCSI_PASS_THROUGH_DIRECT, &sptd,
 							sizeof(sptd), &sptd, sizeof(sptd), &unused, nullptr))
 		{
 			if (sptd.info.DataTransferLength == 2352)
@@ -215,7 +234,7 @@ bool IOCtlSrc::ReadDVDInfo()
 	std::array<u8, 32> buffer;
 	DVD_READ_STRUCTURE dvdrs{{}, DvdPhysicalDescriptor, 0, 0};
 
-	if (!DeviceIoControl(m_device, IOCTL_DVD_READ_STRUCTURE, &dvdrs, sizeof(dvdrs),
+	if (!DriveAccess::DeviceIoControl(m_device, IOCTL_DVD_READ_STRUCTURE, &dvdrs, sizeof(dvdrs),
 						 buffer.data(), buffer.size(), &unused, nullptr))
 	{
 		if ((GetLastError() == ERROR_INVALID_FUNCTION) || (GetLastError() == ERROR_NOT_SUPPORTED))
@@ -246,7 +265,7 @@ bool IOCtlSrc::ReadDVDInfo()
 	{
 		// Dual layer, Parallel Track Path
 		dvdrs.LayerNumber = 1;
-		if (!DeviceIoControl(m_device, IOCTL_DVD_READ_STRUCTURE, &dvdrs, sizeof(dvdrs),
+		if (!DriveAccess::DeviceIoControl(m_device, IOCTL_DVD_READ_STRUCTURE, &dvdrs, sizeof(dvdrs),
 							 buffer.data(), buffer.size(), &unused, nullptr))
 			return false;
 		u32 layer1_start_sector = _byteswap_ulong(layer.StartingDataSector);
@@ -277,7 +296,7 @@ bool IOCtlSrc::ReadCDInfo()
 	toc_ex.SessionTrack = 1;
 
 	CDROM_TOC toc;
-	if (!DeviceIoControl(m_device, IOCTL_CDROM_READ_TOC_EX, &toc_ex,
+	if (!DriveAccess::DeviceIoControl(m_device, IOCTL_CDROM_READ_TOC_EX, &toc_ex,
 						 sizeof(toc_ex), &toc, sizeof(toc), &unused, nullptr))
 		return false;
 
@@ -294,7 +313,7 @@ bool IOCtlSrc::ReadCDInfo()
 	}
 
 	GET_LENGTH_INFORMATION info;
-	if (!DeviceIoControl(m_device, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &info,
+	if (!DriveAccess::DeviceIoControl(m_device, IOCTL_DISK_GET_LENGTH_INFO, nullptr, 0, &info,
 						 sizeof(info), &unused, nullptr))
 		return false;
 
@@ -312,7 +331,7 @@ bool IOCtlSrc::ReadTrackSubQ(cdvdSubQ* subQ) const
 
 	format.Format = IOCTL_CDROM_CURRENT_POSITION;
 
-	if (!DeviceIoControl(m_device, IOCTL_CDROM_READ_Q_CHANNEL, &format, sizeof(format), &osSubQ, sizeof(osSubQ), &unused, nullptr))
+	if (!DriveAccess::DeviceIoControl(m_device, IOCTL_CDROM_READ_Q_CHANNEL, &format, sizeof(format), &osSubQ, sizeof(osSubQ), &unused, nullptr))
 	{
 		Console.Error("SUB CHANNEL READ ERROR: %d\n", errno);
 		return false;
@@ -333,7 +352,7 @@ bool IOCtlSrc::DiscReady()
 		return false;
 
 	DWORD unused;
-	if (DeviceIoControl(m_device, IOCTL_STORAGE_CHECK_VERIFY, nullptr, 0,
+	if (DriveAccess::DeviceIoControl(m_device, IOCTL_STORAGE_CHECK_VERIFY, nullptr, 0,
 						nullptr, 0, &unused, nullptr))
 	{
 		if (!m_sectors)

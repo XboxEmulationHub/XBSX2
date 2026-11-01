@@ -1,6 +1,10 @@
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
+
 #include <winerror.h>
+#include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Storage.h>
 
 namespace UWP
@@ -9,6 +13,27 @@ namespace UWP
 	inline auto* GetABI(const T& object)
 	{
 		return reinterpret_cast<winrt::impl::abi_t<winrt::default_interface<T>>*>(winrt::get_abi(object));
+	}
+
+	// Wait for completion on an MTA thread.
+	template <typename T>
+	inline HRESULT WaitForResult(const winrt::Windows::Foundation::IAsyncOperation<T>& operation, T* result)
+	{
+		std::mutex mutex;
+		std::condition_variable cv;
+		bool completed = false;
+		const winrt::Windows::Foundation::AsyncOperationCompletedHandler<T> handler = [&](const auto&, auto) {
+			std::lock_guard lock(mutex);
+			completed = true;
+			cv.notify_one();
+		};
+		const HRESULT hr = GetABI(operation)->put_Completed(winrt::get_abi(handler));
+		if (FAILED(hr))
+			return hr;
+
+		std::unique_lock lock(mutex);
+		cv.wait(lock, [&completed]() { return completed; });
+		return GetABI(operation)->GetResults(winrt::put_abi(*result));
 	}
 
 	template <typename T>

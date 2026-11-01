@@ -792,6 +792,9 @@
     <ClCompile Include="CDVD\Windows\IOCtlSrc.cpp">
       <Filter>System\Ps2\Iop\CDVD\Windows</Filter>
     </ClCompile>
+    <ClCompile Include="CDVD\Windows\IOCtlSrcXbox.cpp">
+      <Filter>System\Ps2\Iop\CDVD\Windows</Filter>
+    </ClCompile>
     <ClCompile Include="CDVD\Linux\IOCtlSrc.cpp">
       <Filter>System\Ps2\Iop\CDVD\Linux</Filter>
     </ClCompile>
@@ -1733,6 +1736,9 @@
     </ClInclude>
     <ClInclude Include="CDVD\CDVDdiscReader.h">
       <Filter>System\Ps2\Iop\CDVD</Filter>
+    </ClInclude>
+    <ClInclude Include="CDVD\Windows\IOCtlSrcXbox.h">
+      <Filter>System\Ps2\Iop\CDVD\Windows</Filter>
     </ClInclude>
     <ClInclude Include="PINE.h">
       <Filter>System\Include</Filter>
